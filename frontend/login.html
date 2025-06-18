@@ -6,6 +6,7 @@
     <title>로그인</title>
     <link rel="stylesheet" href="login.css">
     <link rel="icon" href="memora.ico">
+    <script src="https://hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body>
     <div class="top-bar">
@@ -29,6 +30,11 @@
                     <input type="checkbox" id="remember-check">아이디 저장하기
                 </label>
                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 10px; text-align: center;">
+                    <div class="h-captcha" data-sitekey="f1b4b9ba-e53e-4eca-a16c-641c266a67e8"></div>
+                </td>
             </tr>
            <tr>
                 <td><input type="submit" value="로그인" class="btn"></td> <!-- onclick 제거 -->

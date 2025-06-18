@@ -6,6 +6,7 @@
     <title>회원가입</title>
     <link rel="stylesheet" href="signup.css">
     <link rel="icon" href="memora.ico">
+    <script src="https://hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body>
     <div class="top-bar">
@@ -65,8 +66,12 @@
                         <span id="timerDisplay" style="margin-left: 10px; color: red; font-weight: bold;"></span>
                     </div>
                 </td>
+            </tr>            
+            <tr>
+                <td style="padding-top: 15px;"> <!-- 약간의 상단 여백을 주어 보기 좋게 만듭니다 -->
+                    <div class="h-captcha" data-sitekey="f1b4b9ba-e53e-4eca-a16c-641c266a67e8"></div>
+                </td>
             </tr>
-        
             <tr>
                 <td>
                     <input type="submit" value="가입하기" class="btn"> 

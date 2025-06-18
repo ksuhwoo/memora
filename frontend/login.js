@@ -11,6 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+
+        // ▼▼▼ [추가] hCaptcha 응답 토큰 가져오기 ▼▼▼
+    const hCaptchaResponse = document.querySelector('[name="h-captcha-response"]').value;
+    if (!hCaptchaResponse) {
+        alert('Capcha 인증을 진행해주세요.'); // 사용자가 캡챠를 풀지 않았을 때
+        return;
+    }
+    // ▲▲▲ [추가] 여기까지 ▲▲▲
     
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
@@ -28,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/login', { // 통합된 로그인 API 호출
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ username, password, 'h-captcha-response': hCaptchaResponse }),
             });
     
             const data = await response.json();
@@ -50,11 +58,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = '/';
     
             } else {
+                if (typeof hcaptcha !== 'undefined') {
+                    hcaptcha.reset();
+                }
                 alert(data.message || '로그인에 실패했습니다. 아이디나 비밀번호를 확인해주세요.');
                 passwordInput.value = '';
             }
         } catch (error) {
             console.error('로그인 오류:', error);
+            if (typeof hcaptcha !== 'undefined') {
+                hcaptcha.reset();
+            }
             alert('로그인 중 오류가 발생했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도해주세요.');
         }
     });

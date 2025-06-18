@@ -202,6 +202,14 @@ signupForm.addEventListener('submit', async function(event) {
         alert('이메일 인증을 먼저 완료해주세요.');
         return;
     }
+    // ▼▼▼ [추가된 부분] hCaptcha 응답 토큰 가져오기 ▼▼▼
+    const hCaptchaResponse = document.querySelector('[name="h-captcha-response"]').value;
+    if (!hCaptchaResponse) {
+        alert('Capcha 인증을 진해해주세요.'); // 사용자가 캡챠를 풀지 않았을 때
+        return;
+    }
+    // ▲▲▲ [추가된 부분] 여기까지 ▲▲▲
+
     const username = document.getElementById('userId').value;
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
@@ -218,7 +226,7 @@ signupForm.addEventListener('submit', async function(event) {
         alert('모든 필수 정보를 입력해주세요.');
         return;
     }
-    const formData = { username, password, name, birth, email };
+    const formData = { username, password, name, birth, email, 'h-captcha-response': hCaptchaResponse };
     const apiUrl = '/api/register';
     try {
         const response = await fetch(apiUrl, {
@@ -232,6 +240,9 @@ signupForm.addEventListener('submit', async function(event) {
             stopTimer();
             window.location.href = '/login';
         } else {
+            if (typeof hcaptcha !== 'undefined') {
+                hcaptcha.reset();
+            }
             alert('회원가입 실패: ' + (data.message || "서버 오류"));
         }
     } catch (error) {

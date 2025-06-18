@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const fetch = require('node-fetch');
 require('dotenv').config();
 
 const dbPool = require('./db');
@@ -140,6 +141,44 @@ app.post('/api/verify-email-code', async (req, res) => {
 // 회원가입
 app.post('/api/register', async (req, res) => {
   console.log('--- /api/register 요청 받음 ---', req.body);
+  // ▼▼▼ [추가된 hCaptcha 검증 로직] ▼▼▼
+  const token = req.body['h-captcha-response'];
+  const secretKey = process.env.HCAPTCHA_SECRET_KEY; // .env 파일에 비밀 키를 저장하세요!
+
+  if (!secretKey) {
+      console.error("HCAPTCHA_SECRET_KEY가 .env 파일에 설정되지 않았습니다.");
+      return res.status(500).json({ message: '보안 설정에 오류가 있습니다. 관리자에게 문의하세요.' });
+  }
+
+  if (!token) {
+      return res.status(400).json({ message: '보안 문자 인증이 필요합니다.' });
+  }
+
+  try {
+      const params = new URLSearchParams();
+      params.append('response', token);
+      params.append('secret', secretKey);
+      // 사용자 IP 주소를 함께 보내면 보안 수준이 향상됩니다.
+      const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      params.append('remoteip', userIp);
+
+      const verifyResponse = await fetch('https://api.hcaptcha.com/siteverify', {
+          method: 'POST',
+          body: params,
+      });
+
+      const verifyData = await verifyResponse.json();
+        console.log('hCaptcha 검증 결과:', verifyData);
+
+        if (!verifyData.success) {
+            // 캡챠 검증 실패 시, 여기서 즉시 처리를 중단하고 에러 응답을 보냅니다.
+            return res.status(400).json({ message: '보안 문자 인증에 실패했습니다. 다시 시도해주세요.' });
+        }
+    } catch (error) {
+        console.error('hCaptcha 검증 API 호출 오류:', error);
+        return res.status(500).json({ message: '보안 인증 중 서버 오류가 발생했습니다.' });
+    }
+    // ▲▲▲ [hCaptcha 검증 로직 끝] ▲▲▲
   const { username, password, name, birth, email } = req.body;
   if (!username || !password || !name || !birth || !email) {
     return res.status(400).json({ message: '모든 필수 필드를 입력해주세요.' });
@@ -191,6 +230,39 @@ app.post('/api/register', async (req, res) => {
 // 로그인
 app.post('/api/login', async (req, res) => {
   console.log('--- /api/login 요청 받음 ---', req.body);
+  // ▼▼▼ [추가된 hCaptcha 검증 로직] ▼▼▼
+  const token = req.body['h-captcha-response'];
+  const secretKey = process.env.HCAPTCHA_SECRET_KEY; // .env 파일의 비밀 키 사용
+
+  if (!secretKey) {
+      console.error("HCAPTCHA_SECRET_KEY가 .env 파일에 설정되지 않았습니다.");
+      return res.status(500).json({ message: '보안 설정에 오류가 있습니다.' });
+  }
+  if (!token) {
+      return res.status(400).json({ message: '보안 문자 인증이 필요합니다.' });
+  }
+  try {
+      const params = new URLSearchParams();
+      params.append('response', token);
+      params.append('secret', secretKey);
+      const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      params.append('remoteip', userIp);
+
+      const verifyResponse = await fetch('https://api.hcaptcha.com/siteverify', {
+        method: 'POST',
+        body: params,
+    });
+    const verifyData = await verifyResponse.json();
+    
+    if (!verifyData.success) {
+        // 캡챠 검증 실패 시, 여기서 즉시 처리를 중단합니다.
+        return res.status(400).json({ message: '보안 문자 인증에 실패했습니다.' });
+    }
+} catch (error) {
+    console.error('hCaptcha 검증 API 호출 오류:', error);
+    return res.status(500).json({ message: '보안 인증 중 서버 오류가 발생했습니다.' });
+}
+// ▲▲▲ [hCaptcha 검증 로직 끝] ▲▲▲
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ message: '아이디와 비밀번호를 모두 입력해주세요.' });
   
