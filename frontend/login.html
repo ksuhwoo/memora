@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인</title>
+    <link rel="stylesheet" href="login.css">
+    <link rel="icon" href="memora.ico">
+</head>
+<body>
+    <div class="top-bar">
+        <a href="/"><img src="memorab.png" width="300" alt="Memora 로고"></a> <!-- alt 속성 추가 -->
+    </div>
+
+    <form id="loginForm"> <!-- form 태그와 id 추가 -->
+        <table>
+            <tr>
+                <td><h2>로그인</h2></td>
+            </tr>
+            <tr>
+                <td><input type="text" id="username" placeholder="ID" required></td> <!-- id 및 required 추가 -->
+            </tr>
+            <tr>
+                <td><input type="password" id="password" placeholder="Password" required></td> <!-- id 및 required 추가 -->
+            </tr>
+            <tr>
+               <td>
+                <label for="remember-check">
+                    <input type="checkbox" id="remember-check">아이디 저장하기
+                </label>
+               </td>
+            </tr>
+           <tr>
+                <td><input type="submit" value="로그인" class="btn"></td> <!-- onclick 제거 -->
+            </tr>
+            <tr>
+                <td class="join"><a href="signup">회원가입</a></td> <!-- signup.html로 가정 -->
+            </tr>
+        </table>
+    </form>
+    <div id="messageArea" style="text-align: center; margin-top: 15px; min-height: 20px;"></div> <!-- 메시지 표시 영역 및 최소 높이 설정 -->
+
+    <script src="login.js"></script> <!-- JavaScript 파일 포함 -->
+</body>
+</html>

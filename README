@@ -1,0 +1,12 @@
+둘이 같이 작업할때
+
+vscode에서 open collaboration tool 설치
+한명이 code-server로 접속해서 open collaboration tool에서 새 공동 작업 세션 만들기 클릭
+여기 파일에 초대 코드 넣기
+다른 한명이 자기 vscode에서 open collaboration tool에서 협업 세션 참여 들어가서 초대 코드 복붙
+공동 작업 세션 만든 사람이 초대 허용해주기
+초대 코드는 매번 할때마다 달라짐
+
+초대 코드:
+
+Gemini API: AIzaSyC7qghbZ_S3MMRAYi4h8oPBnesE34-FZr8

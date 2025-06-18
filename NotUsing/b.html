@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+    <link rel="stylesheet" href="signup.css"> <!-- signup.css 파일이 public 폴더에 있다고 가정 -->
+    <link rel="icon" href="memora.ico">   <!-- memora.ico 파일이 public 폴더에 있다고 가정 -->
+</head>
+<body>
+    <div class="top-bar">
+      <a href="/"><img src="memorainv.png" width="300"></a> <!-- memorainv.png 파일이 public 폴더에 있다고 가정 -->
+    </div>
+    
+    <form id="signupForm"> 
+        <table>
+            <tr><td><h2>회원가입</h2></td></tr>
+        
+            <tr><td>아이디</td></tr>
+            <tr><td><input type="text" name="username" id="userId" class="text" required></td></tr>
+        
+            <tr><td>비밀번호</td></tr>
+            <tr><td><input type="password" name="password" id="password" class="text" required></td></tr>
+        
+            <tr><td>비밀번호 확인</td></tr>
+            <tr><td><input type="password" name="confirm_password" id="confirmPassword" class="text" required></td></tr>
+        
+            <tr><td>이름</td></tr>
+            <tr><td><input type="text" name="name" id="name" class="text" required></td></tr>
+        
+            <tr><td>생년월일</td></tr>
+            <tr><td><input type="date" name="birth" id="birth" class="text" required></td></tr>
+        
+            <tr><td>이메일</td></tr>
+            <tr>
+                <td>
+                    <div class="email-group">
+                        <input type="text" id="emailLocal" class="email" required> @ 
+                        <select id="emailDomain" class="email" required>
+                            <option value="naver.com">naver.com</option>
+                            <option value="gmail.com">gmail.com</option>
+                            <option value="daum.net">daum.net</option>
+                            <option value="nate.com">nate.com</option>
+                        </select>
+                        <button type="button" class="btn" onclick="sendCode()">인증코드 전송</button>
+                    </div>
+                </td>
+            </tr>
+        
+            <tr><td>인증 코드</td></tr>
+            <tr>
+                <td>
+                    <div class="code-group">
+                        <input type="text" id="verificationCode" class="text" placeholder="인증 코드 입력">
+                        <button type="button" class="btn btn-small" onclick="verifyCode()">확인</button>
+                    </div>
+                </td>
+            </tr>
+        
+            <tr>
+                <td>
+                    <input type="submit" value="가입하기" class="btn"> 
+                </td>
+            </tr>
+        </table>
+    </form>          
+    
+    <script>
+        let isEmailVerified = false; 
+
+        async function sendCode() {
+            const local = document.getElementById('emailLocal').value;
+            const domain = document.getElementById('emailDomain').value;
+            const fullEmail = `${local}@${domain}`;
+    
+            if (!local) {
+                alert("이메일 주소를 입력해주세요.");
+                return;
+            }
+    
+            const apiUrl = '/api/send-verification-email'; // 상대 경로 사용
+            console.log('Fetching to API URL (sendCode):', apiUrl); 
+
+            try {
+                const response = await fetch(apiUrl, { 
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: fullEmail })
+                });
+    
+                const data = await response.json();
+                if (response.ok) { 
+                    alert(data.message || "인증 코드가 이메일로 전송되었습니다.");
+                } else {
+                    alert("인증 코드 전송 실패: " + (data.message || "서버 오류"));
+                }
+            } catch (error) {
+                console.error('Error sending verification code:', error);
+                alert('인증 코드 전송 중 오류가 발생했습니다. 네트워크 연결을 확인하거나 서버가 실행 중인지 확인해주세요.');
+            }
+        }
+    
+        async function verifyCode() {
+            const local = document.getElementById('emailLocal').value;
+            const domain = document.getElementById('emailDomain').value;
+            const fullEmail = `${local}@${domain}`;
+            const code = document.getElementById('verificationCode').value;
+    
+            if (!code) {
+                alert("인증 코드를 입력해주세요.");
+                return;
+            }
+    
+            const apiUrl = '/api/verify-email-code'; // 상대 경로 사용
+            console.log('Fetching to API URL (verifyCode):', apiUrl);
+
+            try {
+                const response = await fetch(apiUrl, { 
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: fullEmail, code })
+                });
+    
+                const data = await response.json();
+                if (data.success) { // 백엔드가 { success: true, ... } 형태로 응답한다고 가정
+                    alert(data.message || "이메일 인증 성공!");
+                    isEmailVerified = true; 
+                } else {
+                    alert("이메일 인증 실패: " + (data.message || "잘못된 코드이거나 만료되었습니다."));
+                    isEmailVerified = false;
+                }
+            } catch (error) {
+                console.error('Error verifying email code:', error);
+                alert('이메일 인증 확인 중 오류가 발생했습니다. 네트워크 연결을 확인하거나 서버가 실행 중인지 확인해주세요.');
+                isEmailVerified = false;
+            }
+        }
+
+        const signupForm = document.getElementById('signupForm');
+        signupForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+
+            if (!isEmailVerified) {
+                alert('이메일 인증을 먼저 완료해주세요.');
+                return;
+            }
+
+            const username = document.getElementById('userId').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const name = document.getElementById('name').value;
+            const birth = document.getElementById('birth').value;
+            const emailLocal = document.getElementById('emailLocal').value;
+            const emailDomain = document.getElementById('emailDomain').value;
+            const email = `${emailLocal}@${emailDomain}`;
+
+            if (password !== confirmPassword) {
+                alert('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+
+            if (!username || !password || !name || !birth || !emailLocal) {
+                alert('모든 필수 정보를 입력해주세요.'); // HTML의 required로 대부분 처리되지만, 추가 확인
+                return;
+            }
+            
+            const formData = {
+                username,
+                password,
+                name,
+                birth,
+                email
+            };
+
+            const apiUrl = '/api/register'; // 상대 경로 사용
+            console.log('Submitting registration to API URL:', apiUrl, formData); // 전송 데이터 확인용 로그
+
+            try {
+                const response = await fetch(apiUrl, { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message || "회원가입이 성공적으로 완료되었습니다.");
+                    // 성공 시 로그인 페이지로 이동하거나 다른 작업 수행 (예시)
+                    window.location.href = '/login.html'; // login.html이 public 폴더에 있다고 가정
+                } else {
+                    alert('회원가입 실패: ' + (data.message || "서버에서 오류가 발생했습니다."));
+                }
+            } catch (error) {
+                console.error('회원가입 요청 중 오류 발생 (fetch failed):', error);
+                alert('회원가입 처리 중 오류가 발생했습니다. 서버가 실행 중인지 확인해주세요.');
+            }
+        });
+    </script>
+</body>
+</html>

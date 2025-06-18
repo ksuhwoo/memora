@@ -1,0 +1,70 @@
+table {
+    width: 280px;
+    height: 250px;
+    margin: auto;
+    font-size: 15px;
+    padding-top: 80px;
+}
+.top-bar {
+  background-color: #333;
+  color: white;
+  text-align: center;
+  padding: 13px 0;
+  font-size: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+input[type="text"], input[type="password"] {
+    width: 250px;
+    height: 32px;
+    font-size: 15px;
+    border: 0;
+    border-radius: 5px;
+    outline: none;
+    padding-left: 10px;
+    background-color: rgb(233,233,233);
+}
+.btn {
+    width: 263px;
+    height: 32px;
+    font-size: 15px;
+    border: 0;
+    border-radius: 5px;
+    outline: none;
+    padding-left: 10px;
+    color: white;
+    background-color: #123458;
+}
+.btn:hover {
+  background-color: #0a1c30;
+}
+.btn:active {
+    width: 263px;
+    height: 32px;
+    font-size: 15px;
+    border: 0;
+    border-radius: 5px;
+    outline: none;
+    padding-left: 10px;
+    color: white;
+    background-color: #0a1c30;
+}
+a:link {
+    color : grey;
+    text-decoration: none;
+  }
+  a:visited {
+    color : grey;
+    text-decoration: none;
+  }
+  a:hover {
+    color : rgb(91, 91, 91);
+    text-decoration: none;
+  }
+  a:active {
+    color : black;
+    text-decoration: none;
+  }

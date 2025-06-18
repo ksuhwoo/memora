@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+    <link rel="stylesheet" href="signup.css"> <!-- signup.css 파일이 public 폴더에 있다고 가정 -->
+    <link rel="icon" href="memora.ico">   <!-- memora.ico 파일이 public 폴더에 있다고 가정 -->
+</head>
+<body>
+    <div class="top-bar">
+      <a href="/"><img src="memorainv.png" width="300"></a> <!-- memorainv.png 파일이 public 폴더에 있다고 가정 -->
+    </div>
+    
+    <form id="signupForm"> 
+        <table>
+            <tr><td><h2>회원가입</h2></td></tr>
+        
+            <tr><td>아이디</td></tr>
+            <tr><td><input type="text" name="username" id="userId" class="text" required></td></tr>
+        
+            <tr><td>비밀번호</td></tr>
+            <tr><td><input type="password" name="password" id="password" class="text" required></td></tr>
+        
+            <tr><td>비밀번호 확인</td></tr>
+            <tr><td><input type="password" name="confirm_password" id="confirmPassword" class="text" required></td></tr>
+        
+            <tr><td>이름</td></tr>
+            <tr><td><input type="text" name="name" id="name" class="text" required></td></tr>
+        
+            <tr><td>생년월일</td></tr>
+            <tr><td><input type="date" name="birth" id="birth" class="text" required></td></tr>
+        
+            <tr><td>이메일</td></tr>
+            <tr>
+                <td>
+                    <div class="email-group">
+                        <input type="text" id="emailLocal" class="email" required> @ 
+                        <select id="emailDomain" class="email" required>
+                            <option value="naver.com">naver.com</option>
+                            <option value="gmail.com">gmail.com</option>
+                            <option value="daum.net">daum.net</option>
+                            <option value="nate.com">nate.com</option>
+                        </select>
+                        <button type="button" class="btn" onclick="sendCode()">인증코드 전송</button>
+                    </div>
+                </td>
+            </tr>
+        
+            <tr><td>인증 코드</td></tr>
+            <tr>
+                <td>
+                    <div class="code-group">
+                        <input type="text" id="verificationCode" class="text" placeholder="인증 코드 입력">
+                        <button type="button" class="btn btn-small" onclick="verifyCode()">확인</button>
+                        <span id="timerDisplay" style="margin-left: 10px; color: red; font-weight: bold;"></span> <!-- 타이머 표시 영역 -->
+                    </div>
+                </td>
+            </tr>
+        
+            <tr>
+                <td>
+                    <input type="submit" value="가입하기" class="btn"> 
+                </td>
+            </tr>
+        </table>
+    </form>          
+    
+    <script>
+        let isEmailVerified = false;
+        let timerInterval = null; // 타이머 interval ID 저장 변수
+        let timerSeconds = 600; // 10분 = 600초
+
+        // 타이머 업데이트 및 표시 함수
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            document.getElementById('timerDisplay').textContent =
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // 타이머 시작 함수
+        function startTimer() {
+            // 기존 타이머가 있으면 중지
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            timerSeconds = 600; // 타이머 초기화 (10분)
+            updateTimerDisplay(); // 즉시 표시 업데이트
+            document.getElementById('timerDisplay').style.display = 'inline'; // 타이머 보이게
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerDisplay();
+
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    document.getElementById('timerDisplay').textContent = "시간 만료";
+                    // 필요하다면 인증 코드 무효화 처리 (예: isEmailVerified = false; )
+                    alert("인증 시간이 만료되었습니다. 코드를 다시 요청해주세요.");
+                }
+            }, 1000); // 1초마다 실행
+        }
+
+        // 타이머 중지 함수 (예: 인증 성공 또는 페이지 이탈 시)
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            // 타이머 숨기거나 메시지 변경
+            const timerDisplayElement = document.getElementById('timerDisplay');
+            if (timerDisplayElement) { // 요소가 있는지 확인
+                 timerDisplayElement.style.display = 'none'; // 숨기거나
+                // timerDisplayElement.textContent = ""; // 내용을 비움
+            }
+        }
+
+
+        async function sendCode() {
+            const local = document.getElementById('emailLocal').value;
+            const domain = document.getElementById('emailDomain').value;
+            const fullEmail = `${local}@${domain}`;
+
+            if (!local) {
+                alert("이메일 주소를 입력해주세요.");
+                return;
+            }
+
+            const apiUrl = '/api/send-verification-email';
+            console.log('Fetching to API URL (sendCode):', apiUrl);
+
+            // 인증 코드 전송 버튼 비활성화 (중복 클릭 방지)
+            const sendCodeButton = event.target; // 클릭된 버튼 자신
+            sendCodeButton.disabled = true;
+            sendCodeButton.textContent = '전송 중...';
+
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: fullEmail })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // alert(data.message || "인증 코드가 이메일로 전송되었습니다."); // 기존 alert 제거
+                    console.log(data.message || "인증 코드가 이메일로 전송되었습니다.");
+                    startTimer(); // 타이머 시작
+                    // 성공 메시지를 다른 방식으로 표시하고 싶다면 여기에 추가
+                    // 예: document.getElementById('someSuccessMessageArea').textContent = "인증 코드가 발송되었습니다. 이메일을 확인해주세요.";
+                } else {
+                    alert("인증 코드 전송 실패: " + (data.message || "서버 오류"));
+                    stopTimer(); // 실패 시 타이머 중지 또는 초기화
+                }
+            } catch (error) {
+                console.error('Error sending verification code:', error);
+                alert('인증 코드 전송 중 오류가 발생했습니다. 네트워크 연결을 확인하거나 서버가 실행 중인지 확인해주세요.');
+                stopTimer(); // 오류 시 타이머 중지 또는 초기화
+            } finally {
+                // 버튼 다시 활성화
+                sendCodeButton.disabled = false;
+                sendCodeButton.textContent = '인증코드 전송';
+            }
+        }
+
+        async function verifyCode() {
+            const local = document.getElementById('emailLocal').value;
+            const domain = document.getElementById('emailDomain').value;
+            const fullEmail = `${local}@${domain}`;
+            const code = document.getElementById('verificationCode').value;
+
+            if (!code) {
+                alert("인증 코드를 입력해주세요.");
+                return;
+            }
+
+            const apiUrl = '/api/verify-email-code';
+            console.log('Fetching to API URL (verifyCode):', apiUrl);
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: fullEmail, code })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message || "이메일 인증 성공!");
+                    isEmailVerified = true;
+                    stopTimer(); // 인증 성공 시 타이머 중지
+                    document.getElementById('timerDisplay').textContent = "인증 완료"; // 상태 메시지 변경
+                    document.getElementById('timerDisplay').style.color = "green";
+                } else {
+                    alert("이메일 인증 실패: " + (data.message || "잘못된 코드이거나 만료되었습니다."));
+                    isEmailVerified = false;
+                    // 실패 시 타이머는 계속 진행될 수 있도록 두거나, 특정 로직 추가 가능
+                }
+            } catch (error) {
+                console.error('Error verifying email code:', error);
+                alert('이메일 인증 확인 중 오류가 발생했습니다. 네트워크 연결을 확인하거나 서버가 실행 중인지 확인해주세요.');
+                isEmailVerified = false;
+            }
+        }
+
+        const signupForm = document.getElementById('signupForm');
+        signupForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            if (!isEmailVerified) {
+                alert('이메일 인증을 먼저 완료해주세요.');
+                return;
+            }
+
+            const username = document.getElementById('userId').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const name = document.getElementById('name').value;
+            const birth = document.getElementById('birth').value;
+            const emailLocal = document.getElementById('emailLocal').value;
+            const emailDomain = document.getElementById('emailDomain').value;
+            const email = `${emailLocal}@${emailDomain}`;
+
+            if (password !== confirmPassword) {
+                alert('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+
+            if (!username || !password || !name || !birth || !emailLocal) {
+                alert('모든 필수 정보를 입력해주세요.');
+                return;
+            }
+
+            const formData = {
+                username,
+                password,
+                name,
+                birth,
+                email
+            };
+
+            const apiUrl = '/api/register';
+            console.log('Submitting registration to API URL:', apiUrl, formData);
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message || "회원가입이 성공적으로 완료되었습니다.");
+                    stopTimer(); // 회원가입 성공 시 타이머 정리
+                    window.location.href = '/login';
+                } else {
+                    alert('회원가입 실패: ' + (data.message || "서버에서 오류가 발생했습니다."));
+                }
+            } catch (error) {
+                console.error('회원가입 요청 중 오류 발생 (fetch failed):', error);
+                alert('회원가입 처리 중 오류가 발생했습니다. 서버가 실행 중인지 확인해주세요.');
+            }
+        });
+
+        // 페이지를 벗어날 때 타이머 정리 (선택 사항이지만 권장)
+        window.addEventListener('beforeunload', () => {
+            stopTimer();
+        });
+
+    </script>
+</body>
+</html>

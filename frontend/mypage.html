@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지 - Memora</title>
+    
+    <!-- CSS 파일 로드 -->
+    <link rel="stylesheet" href="style.css">     <!-- 페이지 공통 스타일 -->
+    <link rel="stylesheet" href="header.css">    <!-- 헤더 전용 스타일 -->
+    <link rel="stylesheet" href="mypage.css">    <!-- 마이페이지 전용 스타일 -->
+    
+    <link rel="icon" href="memora.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" integrity="sha512-VD9OV9pIQzYVqMUisNQd_9zOHe9Hj7PzZ82A+X69LqD+V5CZMh_t2Lh6fWkLhxW/p1Yz/HhVl2qpxvS3/92w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <!-- 헤더가 삽입될 자리 (placeholder) -->
+    <header id="header-placeholder"></header>
+
+    <!-- ===== 마이페이지 고유 콘텐츠 ===== -->
+    <main class="mypage-container">
+        <h1>마이페이지</h1>
+        <div class="profile-card">
+            <div class="profile-image-section">
+                <img id="profileImagePreview" src="default-profile.png" alt="프로필 사진">
+                <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+                <button id="changeImageButton" class="btn-secondary">사진 변경</button>
+                <button id="deleteImageButton" class="btn-danger">사진 삭제</button>
+            </div>
+            <div class="profile-info-section">
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="username">아이디</label>
+                        <input type="text" id="username" name="username" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">이메일</label>
+                        <input type="email" id="email" name="email" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">이름</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bio">자기소개</label>
+                        <textarea id="bio" name="bio" rows="4"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">프로필 저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== 이미지 크롭 모달 ===== -->
+    <div id="cropModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>프로필 사진 편집</h2>
+            <div class="crop-container">
+                <img id="imageToCrop" src="" alt="크롭할 이미지">
+            </div>
+            <div class="modal-actions">
+                <button id="cancelCropButton" class="btn-secondary">취소</button>
+                <button id="saveCropButton" class="btn-primary">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 스크립트 로드 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js" integrity="sha512-9KkIqdfN7ipEWOrxanMtn/Zkeqj2QCRHmcqMWdKDHxOl+eGzCsbPAUuJdytClJwdZgLnnGqsZ1BifWb+xEqbOw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="mypage.js"></script> <!-- 페이지 전용 스크립트를 먼저 로드 -->
+    <script src="load-header.js"></script> <!-- 헤더와 공통 스크립트를 마지막에 로드 및 실행 -->
+</body>
+</html>

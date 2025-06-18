@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 로그인</title>
+    <!-- 관리자 전용 CSS 파일을 연결합니다. -->
+    <link rel="stylesheet" href="/admin_login.css"> 
+    <link rel="icon" href="/memora.ico">
+</head>
+<body>
+    <div class="top-bar">
+        <a href="/"><img src="/memorab.png" width="300" alt="Memora 로고"></a>
+    </div>
+
+    <form id="adminLoginForm">
+        <table>
+            <tr>
+                <td><h2>관리자 로그인</h2></td>
+            </tr>
+            <tr>
+                <td><input type="text" id="username" placeholder="Admin ID" required></td>
+            </tr>
+            <tr>
+                <td><input type="password" id="password" placeholder="Password" required></td>
+            </tr>
+            <tr>
+               <td>
+                <label for="remember-check">
+                    <input type="checkbox" id="remember-check">아이디 저장하기
+                </label>
+               </td>
+            </tr>
+           <tr>
+                <td><input type="submit" value="로그인" class="btn"></td>
+            </tr>
+            <!-- 관리자 페이지에서는 회원가입 링크가 필요 없으므로 제거했습니다. -->
+        </table>
+    </form>
+    <div id="messageArea" style="text-align: center; margin-top: 15px; min-height: 20px;"></div>
+
+    <script>
+    // JavaScript를 HTML 파일 내에 직접 작성합니다.
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginForm = document.getElementById('adminLoginForm');
+        const messageArea = document.getElementById('messageArea');
+
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const rememberCheck = document.getElementById('remember-check');
+            
+            messageArea.textContent = ''; // 이전 메시지 삭제
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!username || !password) {
+                messageArea.textContent = '아이디와 비밀번호를 모두 입력해주세요.';
+                return;
+            }
+
+            try {
+                // 🚨 중요: 관리자 로그인 API(/api/admin/login)를 호출합니다.
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message || '관리자 로그인 성공!');
+
+                    // ▼▼▼ [매우 중요] 저장하는 키를 일반 로그인과 통일합니다 ▼▼▼
+                    localStorage.setItem('authToken', data.token);
+                    localStorage.setItem('userData', JSON.stringify(data.user));
+                    // ▲▲▲ 여기까지 수정 ▲▲▲
+
+                    // "아이디 저장" 처리
+                    if (rememberCheck.checked) {
+                        localStorage.setItem('rememberedUsername', username); // 이 키도 통일
+                    } else {
+                        localStorage.removeItem('rememberedUsername');
+                    }
+
+                    // 관리자 대시보드로 리디렉션
+                    window.location.href = '/admin/dashboard';
+
+                } else {
+                    messageArea.style.color = 'red';
+                    messageArea.textContent = data.message || '로그인에 실패했습니다.';
+                    passwordInput.value = '';
+                }
+            } catch (error) {
+                console.error('관리자 로그인 오류:', error);
+                messageArea.style.color = 'red';
+                messageArea.textContent = '서버와 통신 중 오류가 발생했습니다.';
+            }
+        });
+
+        // "아이디 저장"된 관리자 아이디가 있으면 필드 채우기
+        const rememberedUsername = localStorage.getItem('rememberedAdminUsername');
+        if (rememberedUsername) {
+            document.getElementById('username').value = rememberedUsername;
+            document.getElementById('remember-check').checked = true;
+        }
+    });
+    </script>
+</body>
+</html>
