@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const headerPlaceholder = document.getElementById("header-placeholder");
 
     if (headerPlaceholder) {
-        fetch('/header.html')
+        fetch('./header.html')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Header를 불러오는데 실패했습니다.');
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 headerPlaceholder.innerHTML = data;
 
                 const script = document.createElement('script');
-                script.src = '/auth.js';
+                script.src = './auth.js';
 
                 // 스크립트 로드가 완료되면 실행할 로직
                 script.onload = function() {

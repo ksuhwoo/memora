@@ -11,3 +11,7 @@
 .DS_Store
 
 *.sql
+
+package.json
+
+package-lock.json
