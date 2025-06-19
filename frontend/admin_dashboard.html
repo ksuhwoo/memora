@@ -7,37 +7,37 @@
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header.css">
     <link rel="icon" href="/memora.ico">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
         .admin-container { max-width: 1200px; margin: 40px auto; padding: 2rem; }
         .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 1rem; margin-bottom: 2rem; }
+        
+        /* 검색창 스타일 */
+        .search-bar { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+        .search-bar input { flex-grow: 1; padding: 8px 12px; font-size: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .search-bar button { padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .search-bar .search-btn { background-color: #28a745; color: white; }
+        .search-bar .clear-btn { background-color: #6c757d; color: white; }
+
+        /* 테이블 스타일 */
         table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; vertical-align: middle; }
+        .col-profile { width: 1%; white-space: nowrap; text-align: center; }
         td:last-child { white-space: nowrap; }
         th { background-color: #f1f3f5; }
+
+        /* 프로필 및 아바타 스타일 */
+        .profile-avatar-img, .initials-avatar { width: 36px; height: 36px; border-radius: 50%; vertical-align: middle; }
+        .profile-avatar-img { object-fit: cover; }
+        .initials-avatar { display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: bold; text-transform: uppercase; }
         
-        /* 공통 버튼 스타일 */
-        .action-btn { 
-            padding: 6px 12px; /* 모든 버튼에 동일한 크기 적용 */
-            font-size: 13px; 
-            color: white; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            transition: background-color 0.2s; 
-            margin-right: 5px; 
-        }
+        /* 버튼 스타일 */
+        .action-btn { padding: 6px 12px; font-size: 13px; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; margin-right: 5px; }
         .action-btn:last-child { margin-right: 0; }
-
-        /* 색상별 버튼 스타일 */
-        .promote-btn { background-color: #007bff; } /* 파란색: 권한 부여 */
+        .promote-btn { background-color: #007bff; }
         .promote-btn:hover { background-color: #0056b3; }
-
-        /* [변경] 빨간색 버튼들을 그룹으로 묶고, 크기 지정 코드를 제거하여 공통 스타일을 따르게 함 */
-        .demote-btn, .delete-btn { background-color: #dc3545; } 
+        .demote-btn, .delete-btn { background-color: #dc3545; }
         .demote-btn:hover, .delete-btn:hover { background-color: #c82333; }
-        
         .action-btn:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.65; }
     </style>
 </head>
@@ -49,10 +49,18 @@
             <h1>회원 관리</h1>
             <a href="/admin/logs">활동 로그 보기 →</a>
         </div>
+        
+        <div class="search-bar">
+            <input type="search" id="searchInput" placeholder="이름, 아이디, 이메일로 검색...">
+            <button id="searchButton" class="search-btn">검색</button>
+            <button id="clearButton" class="clear-btn">초기화</button>
+        </div>
+
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th class="col-profile">프로필</th>
                     <th>이름</th>
                     <th>사용자명</th>
                     <th>이메일</th>
@@ -74,49 +82,99 @@
             return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
         }
         
+        function generateColorFromUsername(str) {
+            if (!str) return '#CCCCCC';
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let color = '#';
+            for (let i = 0; i < 3; i++) {
+                const value = (hash >> (i * 8)) & 0xFF;
+                color += ('00' + (80 + (value % 120)).toString(16)).substr(-2);
+            }
+            return color;
+        }
+        
         let currentAdmin = null;
 
-        // --- 메인 로직 ---
         document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('authToken');
-            try {
-                currentAdmin = JSON.parse(localStorage.getItem('userData'));
-            } catch (e) { /* 무시 */ }
+            try { currentAdmin = JSON.parse(localStorage.getItem('userData')); } catch (e) {}
 
             if (!token || !currentAdmin) {
                 alert('로그인이 필요합니다.');
                 window.location.href = '/login';
                 return;
             }
+            
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const clearButton = document.getElementById('clearButton');
+            
+            searchButton.addEventListener('click', () => {
+                loadAndDisplayUsers(token, searchInput.value.trim());
+            });
+            
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    loadAndDisplayUsers(token, searchInput.value.trim());
+                }
+            });
+
+            clearButton.addEventListener('click', () => {
+                searchInput.value = '';
+                loadAndDisplayUsers(token);
+            });
+
             loadAndDisplayUsers(token);
         });
 
-        // --- 사용자 목록 로드 함수 ---
-        async function loadAndDisplayUsers(token) {
+        async function loadAndDisplayUsers(token, query = '') {
             const userTableBody = document.getElementById('user-table-body');
+            userTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">데이터 로딩 중...</td></tr>`;
+
+            let apiUrl = '/api/admin/users';
+            if (query) {
+                apiUrl += `?q=${encodeURIComponent(query)}`;
+            }
+
             try {
-                const response = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+                const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${token}` } });
                 if (!response.ok) throw new Error('회원 목록을 불러오지 못했습니다.');
                 
                 const users = await response.json();
                 userTableBody.innerHTML = '';
                 
+                if (users.length === 0) {
+                    const message = query ? `'${query}'에 대한 검색 결과가 없습니다.` : '등록된 회원이 없습니다.';
+                    userTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center;">${message}</td></tr>`;
+                    return;
+                }
+
                 users.forEach(user => {
                     const row = userTableBody.insertRow();
                     const isSelf = user.id === currentAdmin.userId;
                     const birthDate = formatDateToYYYYMMDD(user.birth);
-                    
-                    let permissionButtonHtml = '';
-                    if (user.role === 'admin') {
-                        permissionButtonHtml = `<button class="action-btn demote-btn" data-user-id="${user.id}" data-username="${user.username}" ${isSelf ? 'disabled' : ''}>권한 삭제</button>`;
-                    } else {
-                        permissionButtonHtml = `<button class="action-btn promote-btn" data-user-id="${user.id}" data-username="${user.username}">권한 부여</button>`;
+
+                    let profileHtml = '';
+                    if (user.profile_image_url) {
+                        profileHtml = `<img src="${user.profile_image_url}" alt="${user.username}" class="profile-avatar-img">`;
+                    } else if (user.username) {
+                        const firstLetter = user.username.charAt(0).toUpperCase();
+                        const bgColor = generateColorFromUsername(user.username);
+                        profileHtml = `<div class="initials-avatar" style="background-color:${bgColor};">${firstLetter}</div>`;
                     }
+
+                    let permissionButtonHtml = user.role === 'admin' 
+                        ? `<button class="action-btn demote-btn" data-user-id="${user.id}" data-username="${user.username}" ${isSelf ? 'disabled' : ''}>권한 삭제</button>`
+                        : `<button class="action-btn promote-btn" data-user-id="${user.id}" data-username="${user.username}">권한 부여</button>`;
                     
                     const deleteButtonHtml = `<button class="action-btn delete-btn" data-user-id="${user.id}" data-username="${user.username}" ${isSelf ? 'disabled' : ''}>강제 탈퇴</button>`;
-
+                    
                     row.innerHTML = `
                         <td>${user.id}</td>
+                        <td class="col-profile">${profileHtml}</td>
                         <td>${user.name}</td>
                         <td>${user.username}</td>
                         <td>${user.email}</td>
@@ -126,13 +184,14 @@
                 });
             } catch (error) {
                 console.error('회원 목록 로딩 오류:', error);
-                userTableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">데이터를 불러오는 중 오류가 발생했습니다.</td></tr>`;
+                userTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">데이터를 불러오는 중 오류가 발생했습니다.</td></tr>`;
             }
         }
 
-        // --- 버튼 클릭 이벤트 리스너 ---
         document.getElementById('user-table-body').addEventListener('click', async (event) => {
             const button = event.target;
+            if (!button.matches('.action-btn')) return;
+
             const token = localStorage.getItem('authToken');
             const userId = button.dataset.userId;
             const username = button.dataset.username;
@@ -141,35 +200,39 @@
                 if (confirm(`'${username}' 회원을 정말로 강제 탈퇴시키겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
                     await handleUserAction(`/api/admin/users/${userId}`, 'DELETE', token, null, `'${username}' 회원이 탈퇴 처리되었습니다.`);
                 }
-            }
-
-            if (button.classList.contains('demote-btn')) {
+            } else if (button.classList.contains('demote-btn')) {
                 if (confirm(`'${username}' 관리자의 권한을 일반 사용자로 변경하시겠습니까?`)) {
                     await handleUserAction(`/api/admin/users/${userId}/role`, 'PUT', token, { role: 'user' }, `'${username}'의 권한이 일반 사용자로 변경되었습니다.`);
                 }
-            }
-            
-            if (button.classList.contains('promote-btn')) {
+            } else if (button.classList.contains('promote-btn')) {
                 if (confirm(`'${username}' 사용자에게 관리자 권한을 부여하시겠습니까?`)) {
                     await handleUserAction(`/api/admin/users/${userId}/role`, 'PUT', token, { role: 'admin' }, `'${username}'에게 관리자 권한이 부여되었습니다.`);
                 }
             }
         });
 
-        // --- 공통 액션 처리 함수 ---
         async function handleUserAction(apiUrl, method, token, body, successMessage) {
             try {
                 const headers = { 'Authorization': `Bearer ${token}` };
                 const options = { method, headers };
+
                 if (body) {
                     headers['Content-Type'] = 'application/json';
                     options.body = JSON.stringify(body);
                 }
+
                 const response = await fetch(apiUrl, options);
                 const result = await response.json();
-                if (!response.ok) throw new Error(result.message || '요청 처리에 실패했습니다.');
+
+                if (!response.ok) {
+                    throw new Error(result.message || '요청 처리에 실패했습니다.');
+                }
+                
                 alert(successMessage);
-                loadAndDisplayUsers(token);
+                // 액션 처리 후, 현재 검색어를 유지하며 목록을 새로고침
+                const currentQuery = document.getElementById('searchInput').value.trim();
+                loadAndDisplayUsers(token, currentQuery);
+                
             } catch (error) {
                 console.error('처리 중 오류:', error);
                 alert(`오류: ${error.message}`);

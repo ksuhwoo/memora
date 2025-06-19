@@ -620,17 +620,36 @@ app.delete('/api/user/withdraw', authenticateToken, async (req, res) => {
 
 // --- 관리자 전용 API ---
 
-// [추가] 1. 모든 회원 정보 조회 (관리자만 가능)
+// [수정됨] 1. 모든 회원 정보 조회 (관리자만 가능) - 검색 기능 추가
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
-    console.log(`--- /api/admin/users 요청 받음 (관리자: ${req.user.username}) ---`);
+    // 1. URL 쿼리에서 검색어(q)를 가져옵니다. 없으면 빈 문자열로 처리.
+    const searchQuery = req.query.q || '';
+    console.log(`--- /api/admin/users 요청 받음 (관리자: ${req.user.username}, 검색어: '${searchQuery}') ---`);
+
     let connection;
     try {
         connection = await dbPool.getConnection();
-        // 비밀번호를 제외한 모든 사용자 정보를 조회합니다.
-        const [users] = await connection.execute(
-            `SELECT id, name, username, email, birth, role FROM ${process.env.DB_NAME}.users ORDER BY created_at ASC`
-        );
+
+        // 2. 기본 SQL문과 파라미터 배열을 준비합니다.
+        let sql = `SELECT id, name, username, email, birth, role, profile_image_url FROM ${process.env.DB_NAME}.users`;
+        const params = [];
+
+        // 3. 검색어가 있는 경우, WHERE 절을 동적으로 추가합니다.
+        if (searchQuery) {
+            // 이름(name), 사용자명(username), 이메일(email)에서 검색합니다.
+            sql += ' WHERE name LIKE ? OR username LIKE ? OR email LIKE ?';
+            const searchTerm = `%${searchQuery}%`; // SQL LIKE 검색을 위한 와일드카드 추가
+            params.push(searchTerm, searchTerm, searchTerm);
+        }
+
+        // 4. 정렬 순서를 마지막에 추가합니다.
+        sql += ' ORDER BY id ASC';
+
+        // 5. 준비된 SQL문과 파라미터로 쿼리를 실행합니다.
+        const [users] = await connection.execute(sql, params);
+        
         res.status(200).json(users);
+
     } catch (error) {
         console.error('관리자용 회원 목록 조회 중 오류:', error);
         res.status(500).json({ message: '회원 목록을 불러오는 중 서버 오류가 발생했습니다.' });
