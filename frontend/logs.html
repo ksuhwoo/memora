@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>회원 활동 로그</title>
+    
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/header.css">
+    <link rel="icon" href="/memora.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 2rem; }
+        .admin-container h1 { border-bottom: 1px solid #dee2e6; padding-bottom: 1rem; margin-bottom: 2rem; }
+        .admin-container .nav-link { margin-bottom: 2rem; display: inline-block; }
+        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; vertical-align: middle; }
+        th { background-color: #f1f3f5; }
+    </style>
+</head>
+<body>
+    <header id="header-placeholder"></header>
+
+    <div class="admin-container">
+        <main>
+            <a href="/admin/dashboard" class="nav-link">← 회원 관리로 돌아가기</a>
+            <h1>회원 활동 로그</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>로그 타입</th>
+                        <th>사용자명</th>
+                        <th>IP 주소</th>
+                        <th>기록 시간</th>
+                    </tr>
+                </thead>
+                <tbody id="log-table-body">
+                    <!-- 스크립트에 의해 채워질 영역 -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <script src="/load-header.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/logs', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('세션이 만료되었거나 접근 권한이 없습니다.');
+                }
+                if (!response.ok) {
+                    throw new Error('데이터 로딩 중 오류가 발생했습니다.');
+                }
+
+                const logs = await response.json();
+                const tableBody = document.getElementById('log-table-body');
+                tableBody.innerHTML = '';
+
+                if (logs.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">표시할 로그가 없습니다.</td></tr>`;
+                } else {
+                    logs.forEach(log => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${log.id}</td>
+                            <td>${log.log_type}</td>
+                            <td>${log.username}</td>
+                            <td>${log.ip_address || 'N/A'}</td>
+                            <td>${new Date(log.log_time).toLocaleString('ko-KR')}</td>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error('로그 데이터 로딩 오류:', error);
+                alert(error.message);
+                if (error.message.includes('세션')) {
+                    window.location.href = '/login';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

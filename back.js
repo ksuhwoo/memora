@@ -619,7 +619,208 @@ app.delete('/api/user/withdraw', authenticateToken, async (req, res) => {
 });
 
 // --- 관리자 전용 API ---
-// 로그 기록 조회 (관리자만 가능)
+
+// [추가] 1. 모든 회원 정보 조회 (관리자만 가능)
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+    console.log(`--- /api/admin/users 요청 받음 (관리자: ${req.user.username}) ---`);
+    let connection;
+    try {
+        connection = await dbPool.getConnection();
+        // 비밀번호를 제외한 모든 사용자 정보를 조회합니다.
+        const [users] = await connection.execute(
+            `SELECT id, name, username, email, birth, role FROM ${process.env.DB_NAME}.users ORDER BY created_at ASC`
+        );
+        res.status(200).json(users);
+    } catch (error) {
+        console.error('관리자용 회원 목록 조회 중 오류:', error);
+        res.status(500).json({ message: '회원 목록을 불러오는 중 서버 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// [수정됨] 2. 특정 회원 강제 탈퇴 (관리자만 가능) - 이메일 발송 기능 추가
+app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
+    const userIdToDelete = req.params.id;
+    const adminUsername = req.user.username;
+    console.log(`--- /api/admin/users/${userIdToDelete} DELETE 요청 받음 (관리자: ${adminUsername}) ---`);
+
+    if (req.user.userId == userIdToDelete) {
+        return res.status(400).json({ message: '관리자는 자기 자신을 탈퇴시킬 수 없습니다.' });
+    }
+    
+    let connection;
+    try {
+        connection = await dbPool.getConnection();
+        await connection.beginTransaction();
+
+        // [수정] 1. 삭제할 사용자의 이메일, 이름, 프로필 경로를 먼저 가져옵니다.
+        const [users] = await connection.execute(
+            `SELECT email, username, profile_image_url FROM ${process.env.DB_NAME}.users WHERE id = ?`,
+            [userIdToDelete]
+        );
+
+        if (users.length === 0) {
+            await connection.rollback(); // 사용자가 없으면 롤백
+            return res.status(404).json({ message: '해당 ID의 사용자를 찾을 수 없습니다.' });
+        }
+        const userToDelete = users[0];
+
+        // 2. 사용자를 DB에서 삭제합니다.
+        const [result] = await connection.execute(
+            `DELETE FROM ${process.env.DB_NAME}.users WHERE id = ?`,
+            [userIdToDelete]
+        );
+        
+        if (result.affectedRows === 0) {
+            // 이 로직은 users.length === 0 에서 이미 처리되지만, 안전을 위해 유지합니다.
+            await connection.rollback();
+            return res.status(404).json({ message: '해당 ID의 사용자를 찾을 수 없습니다.' });
+        }
+
+        // [추가] 3. 탈퇴 처리 이메일 발송 (DB 삭제 성공 후, 커밋 전에 실행)
+        // transporter가 설정되어 있고, 사용자 이메일이 존재할 경우에만 발송을 시도합니다.
+        if (transporter && userToDelete.email) {
+            const emailHtml = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                    <h2>[Memora] 계정 탈퇴 처리 안내</h2>
+                    <p>안녕하세요, <strong>${userToDelete.username}</strong>님.</p>
+                    <p>관리자의 요청에 따라 회원님의 Memora 계정이 영구적으로 삭제되었음을 알려드립니다.</p>
+                    <p>이 조치는 서비스 약관 위반 또는 기타 운영상의 사유로 인해 시행될 수 있습니다.</p>
+                    <hr>
+                    <p>궁금한 점이 있으시면 관리자에게 문의해주시기 바랍니다.</p>
+                    <p>감사합니다.<br>Memora 팀 드림</p>
+                </div>
+            `;
+            const mailOptions = {
+                from: `"Memora" <${process.env.EMAIL_USER}>`,
+                to: userToDelete.email,
+                subject: '[Memora] 회원님의 계정이 관리자에 의해 탈퇴 처리되었습니다.',
+                html: emailHtml
+            };
+            
+            // 이메일 발송은 비동기로 처리하되, 실패하더라도 회원 탈퇴 로직 전체를 롤백하지는 않습니다.
+            // 탈퇴 처리가 더 중요한 작업이기 때문입니다. 실패 시 로그만 남깁니다.
+            transporter.sendMail(mailOptions).catch(emailError => {
+                console.error(`탈퇴한 사용자(${userToDelete.email})에게 이메일 발송 실패:`, emailError);
+            });
+        }
+
+        // 4. 기존 프로필 이미지가 있다면 서버에서 삭제합니다.
+        if (userToDelete.profile_image_url) {
+            const imageUrl = userToDelete.profile_image_url;
+            const filename = path.basename(imageUrl);
+            const filePath = path.join(__dirname, 'uploads', filename);
+
+            if (fs.existsSync(filePath)) {
+                fs.unlink(filePath, (err) => {
+                    if (err) console.error(`회원(${userIdToDelete}) 프로필 이미지 파일 삭제 실패: ${filePath}`, err);
+                    else console.log(`회원(${userIdToDelete}) 프로필 이미지 파일 삭제 성공: ${filePath}`);
+                });
+            }
+        }
+        
+        // 5. 모든 작업이 성공하면 트랜잭션을 커밋합니다.
+        await connection.commit();
+        console.log(`관리자(${adminUsername})가 사용자 ID(${userIdToDelete})를 성공적으로 삭제하고 이메일 발송을 시도했습니다.`);
+        res.status(200).json({ message: '회원이 성공적으로 강제 탈퇴 처리되었습니다.' });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error(`관리자의 회원 강제 탈퇴 처리 중 오류:`, error);
+        res.status(500).json({ message: '회원 강제 탈퇴 처리 중 서버 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// [통합 및 수정] 3. 특정 사용자의 역할을 변경 (관리자 <-> 일반) - 이메일 발송 포함
+app.put('/api/admin/users/:id/role', requireAdmin, async (req, res) => {
+    const userIdToChange = req.params.id;
+    const newRole = req.body.role; // 요청 body에서 새로운 역할('admin' 또는 'user')을 받음
+    const adminUsername = req.user.username;
+
+    console.log(`--- /api/admin/users/${userIdToChange}/role PUT 요청 받음 (관리자: ${adminUsername}, 새 역할: ${newRole}) ---`);
+
+    if (!['admin', 'user'].includes(newRole)) {
+        return res.status(400).json({ message: "요청한 역할이 유효하지 않습니다. 'admin' 또는 'user'만 가능합니다." });
+    }
+    if (req.user.userId == userIdToChange) {
+        return res.status(400).json({ message: '자기 자신의 권한은 변경할 수 없습니다.' });
+    }
+
+    let connection;
+    try {
+        connection = await dbPool.getConnection();
+        await connection.beginTransaction();
+
+        // 대상 사용자의 이메일과 사용자명을 조회
+        const [users] = await connection.execute(
+            `SELECT email, username, role FROM ${process.env.DB_NAME}.users WHERE id = ?`,
+            [userIdToChange]
+        );
+
+        if (users.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: '해당 ID의 사용자를 찾을 수 없습니다.' });
+        }
+        
+        const userToChange = users[0];
+        if (userToChange.role === newRole) {
+            await connection.rollback();
+            return res.status(409).json({ message: `사용자는 이미 '${newRole}' 역할을 가지고 있습니다.` });
+        }
+
+        // 역할 업데이트
+        await connection.execute(
+            `UPDATE ${process.env.DB_NAME}.users SET role = ? WHERE id = ?`,
+            [newRole, userIdToChange]
+        );
+
+        // 이메일 발송 로직
+        if (transporter && userToChange.email) {
+            let subject = '';
+            let emailHtml = '';
+
+            // 새로운 역할에 따라 다른 이메일 내용 설정
+            if (newRole === 'admin') {
+                subject = '[Memora] 회원님에게 관리자 권한이 부여되었습니다.';
+                emailHtml = `<p>안녕하세요, <strong>${userToChange.username}</strong>님. 회원님의 계정에 관리자(admin) 권한이 부여되었음을 알려드립니다.</p>`;
+            } else { // newRole === 'user'
+                subject = '[Memora] 회원님의 관리자 권한이 회수되었습니다.';
+                emailHtml = `<p>안녕하세요, <strong>${userToChange.username}</strong>님. 회원님의 계정에 부여되었던 관리자(admin) 권한이 회수되었습니다.</p>`;
+            }
+            
+            const finalEmailHtml = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                    <h2>[Memora] 계정 권한 변경 안내</h2>
+                    ${emailHtml}
+                    <hr>
+                    <p>궁금한 점이 있으시면 다른 관리자에게 문의해주시기 바랍니다.</p>
+                    <p>감사합니다.<br>Memora 팀 드림</p>
+                </div>`;
+
+            transporter.sendMail({
+                from: `"Memora" <${process.env.EMAIL_USER}>`,
+                to: userToChange.email,
+                subject: subject,
+                html: finalEmailHtml
+            }).catch(err => console.error(`권한 변경 이메일 발송 실패: ${err}`));
+        }
+        
+        await connection.commit();
+        res.status(200).json({ message: '사용자의 역할이 성공적으로 변경되었습니다.' });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error(`역할 변경 처리 중 오류:`, error);
+        res.status(500).json({ message: '역할 변경 처리 중 서버 오류가 발생했습니다.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// 기존 코드: 로그 기록 조회 (관리자만 가능)
 app.get('/api/admin/logs', requireAdmin, async (req, res) => {
   // 'requireAdmin' 미들웨어를 통과해야만 이 코드가 실행됩니다.
   console.log(`--- /api/admin/logs 요청 받음 (관리자: ${req.user.username}) ---`);

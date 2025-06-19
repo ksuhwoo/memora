@@ -4,139 +4,177 @@
     <meta charset="UTF-8">
     <title>관리자 대시보드</title>
     
-    <!-- 공통 및 페이지 전용 CSS 로드 -->
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/header.css">
-    
     <link rel="icon" href="/memora.ico">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- 관리자 페이지 전용 스타일은 여기에 직접 작성합니다. -->
     <style>
-        .admin-container { 
-            max-width: 1200px; 
-            margin: 40px auto; 
-            padding: 2rem; 
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 2rem; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 1rem; margin-bottom: 2rem; }
+        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; vertical-align: middle; }
+        td:last-child { white-space: nowrap; }
+        th { background-color: #f1f3f5; }
+        
+        /* 공통 버튼 스타일 */
+        .action-btn { 
+            padding: 6px 12px; /* 모든 버튼에 동일한 크기 적용 */
+            font-size: 13px; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            transition: background-color 0.2s; 
+            margin-right: 5px; 
         }
+        .action-btn:last-child { margin-right: 0; }
 
-        .admin-container h1 {
-            border-bottom: 1px solid #dee2e6; 
-            padding-bottom: 1rem; 
-            margin-bottom: 2rem;
-        }
+        /* 색상별 버튼 스타일 */
+        .promote-btn { background-color: #007bff; } /* 파란색: 권한 부여 */
+        .promote-btn:hover { background-color: #0056b3; }
 
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            background-color: white; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        }
-
-        th, td { 
-            border: 1px solid #dee2e6; 
-            padding: 12px; 
-            text-align: left; 
-            vertical-align: middle;
-        }
-
-        th { 
-            background-color: #f1f3f5; 
-        }
+        /* [변경] 빨간색 버튼들을 그룹으로 묶고, 크기 지정 코드를 제거하여 공통 스타일을 따르게 함 */
+        .demote-btn, .delete-btn { background-color: #dc3545; } 
+        .demote-btn:hover, .delete-btn:hover { background-color: #c82333; }
+        
+        .action-btn:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.65; }
     </style>
 </head>
 <body>
-    <!-- 1. 헤더가 삽입될 자리 (placeholder) -->
     <header id="header-placeholder"></header>
 
-    <!-- 2. 관리자 페이지 고유 콘텐츠 -->
     <div class="admin-container">
-        <main>
-            <h1>회원 활동 로그</h1>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>로그 타입</th>
-                        <th>사용자명</th>
-                        <th>IP 주소</th>
-                        <th>기록 시간</th>
-                    </tr>
-                </thead>
-                <tbody id="log-table-body">
-                    <!-- 스크립트에 의해 채워질 영역 -->
-                </tbody>
-            </table>
-        </main>
+        <div class="admin-header">
+            <h1>회원 관리</h1>
+            <a href="/admin/logs">활동 로그 보기 →</a>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>이름</th>
+                    <th>사용자명</th>
+                    <th>이메일</th>
+                    <th>생년월일</th>
+                    <th>권한</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody id="user-table-body"></tbody>
+        </table>
     </div>
 
-    <!-- 3. 공통 헤더를 불러오는 스크립트 -->
     <script src="/load-header.js"></script>
-
-    <!-- 4. 관리자 로그를 불러오는 스크립트 (파일을 분리하지 않고 여기에 직접 작성) -->
     <script>
-        // DOMContentLoaded를 사용해 페이지의 기본 HTML이 준비되면 즉시 실행합니다.
-        document.addEventListener('DOMContentLoaded', async () => {
+        // --- 헬퍼 함수 ---
+        function formatDateToYYYYMMDD(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+        }
+        
+        let currentAdmin = null;
+
+        // --- 메인 로직 ---
+        document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('authToken');
-            
-            if (!token) {
+            try {
+                currentAdmin = JSON.parse(localStorage.getItem('userData'));
+            } catch (e) { /* 무시 */ }
+
+            if (!token || !currentAdmin) {
                 alert('로그인이 필요합니다.');
                 window.location.href = '/login';
                 return;
             }
+            loadAndDisplayUsers(token);
+        });
 
+        // --- 사용자 목록 로드 함수 ---
+        async function loadAndDisplayUsers(token) {
+            const userTableBody = document.getElementById('user-table-body');
             try {
-                const response = await fetch('/api/admin/logs', {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const response = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!response.ok) throw new Error('회원 목록을 불러오지 못했습니다.');
+                
+                const users = await response.json();
+                userTableBody.innerHTML = '';
+                
+                users.forEach(user => {
+                    const row = userTableBody.insertRow();
+                    const isSelf = user.id === currentAdmin.userId;
+                    const birthDate = formatDateToYYYYMMDD(user.birth);
+                    
+                    let permissionButtonHtml = '';
+                    if (user.role === 'admin') {
+                        permissionButtonHtml = `<button class="action-btn demote-btn" data-user-id="${user.id}" data-username="${user.username}" ${isSelf ? 'disabled' : ''}>권한 삭제</button>`;
+                    } else {
+                        permissionButtonHtml = `<button class="action-btn promote-btn" data-user-id="${user.id}" data-username="${user.username}">권한 부여</button>`;
+                    }
+                    
+                    const deleteButtonHtml = `<button class="action-btn delete-btn" data-user-id="${user.id}" data-username="${user.username}" ${isSelf ? 'disabled' : ''}>강제 탈퇴</button>`;
+
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td>${birthDate}</td>
+                        <td>${user.role}</td>
+                        <td>${permissionButtonHtml} ${deleteButtonHtml}</td>`;
                 });
-
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('userData');
-                    alert('세션이 만료되었거나 접근 권한이 없습니다. 다시 로그인해주세요.');
-                    window.location.href = '/login';
-                    return;
-                }
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: '데이터 로딩 중 알 수 없는 오류 발생' }));
-                    throw new Error(errorData.message);
-                }
-
-                const logs = await response.json();
-                const tableBody = document.getElementById('log-table-body');
-                
-                if (!tableBody) {
-                    console.error("테이블의 tbody(id='log-table-body')를 찾을 수 없습니다.");
-                    return;
-                }
-                
-                tableBody.innerHTML = ''; // 테이블 비우기
-
-                if (logs.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">표시할 로그가 없습니다.</td></tr>`;
-                } else {
-                    logs.forEach(log => {
-                        const row = tableBody.insertRow();
-                        row.innerHTML = `
-                            <td>${log.id}</td>
-                            <td>${log.log_type}</td>
-                            <td>${log.username}</td>
-                            <td>${log.ip_address || 'N/A'}</td>
-                            <td>${new Date(log.log_time).toLocaleString('ko-KR')}</td>
-                        `;
-                    });
-                }
-
             } catch (error) {
-                console.error('로그 데이터를 가져오는 중 오류 발생:', error);
-                alert(`오류: ${error.message}`);
-                const tableBody = document.getElementById('log-table-body');
-                if (tableBody) {
-                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">데이터를 불러오는 중 오류가 발생했습니다.</td></tr>`;
+                console.error('회원 목록 로딩 오류:', error);
+                userTableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">데이터를 불러오는 중 오류가 발생했습니다.</td></tr>`;
+            }
+        }
+
+        // --- 버튼 클릭 이벤트 리스너 ---
+        document.getElementById('user-table-body').addEventListener('click', async (event) => {
+            const button = event.target;
+            const token = localStorage.getItem('authToken');
+            const userId = button.dataset.userId;
+            const username = button.dataset.username;
+
+            if (button.classList.contains('delete-btn')) {
+                if (confirm(`'${username}' 회원을 정말로 강제 탈퇴시키겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+                    await handleUserAction(`/api/admin/users/${userId}`, 'DELETE', token, null, `'${username}' 회원이 탈퇴 처리되었습니다.`);
+                }
+            }
+
+            if (button.classList.contains('demote-btn')) {
+                if (confirm(`'${username}' 관리자의 권한을 일반 사용자로 변경하시겠습니까?`)) {
+                    await handleUserAction(`/api/admin/users/${userId}/role`, 'PUT', token, { role: 'user' }, `'${username}'의 권한이 일반 사용자로 변경되었습니다.`);
+                }
+            }
+            
+            if (button.classList.contains('promote-btn')) {
+                if (confirm(`'${username}' 사용자에게 관리자 권한을 부여하시겠습니까?`)) {
+                    await handleUserAction(`/api/admin/users/${userId}/role`, 'PUT', token, { role: 'admin' }, `'${username}'에게 관리자 권한이 부여되었습니다.`);
                 }
             }
         });
+
+        // --- 공통 액션 처리 함수 ---
+        async function handleUserAction(apiUrl, method, token, body, successMessage) {
+            try {
+                const headers = { 'Authorization': `Bearer ${token}` };
+                const options = { method, headers };
+                if (body) {
+                    headers['Content-Type'] = 'application/json';
+                    options.body = JSON.stringify(body);
+                }
+                const response = await fetch(apiUrl, options);
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || '요청 처리에 실패했습니다.');
+                alert(successMessage);
+                loadAndDisplayUsers(token);
+            } catch (error) {
+                console.error('처리 중 오류:', error);
+                alert(`오류: ${error.message}`);
+            }
+        }
     </script>
 </body>
 </html>

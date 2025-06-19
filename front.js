@@ -39,6 +39,10 @@ app.get("/admin/dashboard", function(req, res){
     res.sendFile(path.join(__dirname, 'frontend', 'admin_dashboard.html'));
 });
 
+app.get("/admin/logs", function(req, res){
+    res.sendFile(path.join(__dirname, 'frontend', 'logs.html'));
+});
+
 // 만약 프론트엔드가 React, Vue, Angular 같은 SPA(Single Page Application)이고
 // 클라이언트 사이드 라우팅을 사용한다면, 위 특정 HTML 라우트 대신 아래와 같이 설정합니다.
 // 이는 /profile, /dashboard 등 정의되지 않은 모든 GET 요청에 대해 index.html을 반환하여
