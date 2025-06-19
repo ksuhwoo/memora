@@ -1,8 +1,30 @@
 // frontend/mypage.js
 
+/**
+ * 사용자 이름(문자열)을 기반으로 고유한 HEX 색상 코드를 생성합니다.
+ * (auth.js와 동일한 함수를 사용하여 일관성을 유지합니다)
+ * @param {string} str - 색상을 생성할 기준 문자열
+ * @returns {string} - HEX 색상 코드 (예: '#aabbcc')
+ */
+function generateColorFromUsername(str) {
+    if (!str) return '#CCCCCC';
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = '#';
+    for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        const adjustedValue = 80 + (value % 120);
+        color += ('00' + adjustedValue.toString(16)).substr(-2);
+    }
+    return color;
+}
+
 function initializeMyPage() {
     // --- 필수 HTML 요소 가져오기 ---
     const profileImagePreview = document.getElementById('profileImagePreview');
+    const initialsPreview = document.getElementById('initialsPreview');
     const profileImageInput = document.getElementById('profileImageInput');
     const changeImageButton = document.getElementById('changeImageButton');
     const deleteImageButton = document.getElementById('deleteImageButton');
@@ -12,16 +34,17 @@ function initializeMyPage() {
     const nameInput = document.getElementById('name');
     const bioTextarea = document.getElementById('bio');
     
-    // 헤더의 요소들은 이 함수가 호출될 시점에는 이미 존재함이 보장됩니다.
+    // 헤더의 프로필 요소들 (즉시 업데이트를 위함)
     const userProfileImageInHeader = document.getElementById('userProfileImage');
     const defaultProfileIconInHeader = document.getElementById('defaultProfileIcon');
+    const userInitialsAvatarInHeader = document.getElementById('userInitialsAvatar');
 
     // 크롭 모달 관련 요소
     const cropModal = document.getElementById('cropModal');
     const imageToCrop = document.getElementById('imageToCrop');
     const saveCropButton = document.getElementById('saveCropButton');
     const cancelCropButton = document.getElementById('cancelCropButton');
-    let cropper = null; // Cropper.js 인스턴스를 저장할 변수
+    let cropper = null;
 
     // --- 인증 토큰 확인 ---
     const token = localStorage.getItem('authToken');
@@ -31,6 +54,74 @@ function initializeMyPage() {
         return;
     }
 
+    /**
+     * 마이페이지의 프로필 미리보기를 업데이트하는 함수
+     * @param {string | null} imageUrl - 이미지 URL
+     * @param {string} username - 사용자 이름
+     */
+    function updateMyPagePreview(imageUrl, username) {
+        if (!profileImagePreview || !initialsPreview) return;
+        
+        profileImagePreview.style.display = 'none';
+        initialsPreview.style.display = 'none';
+
+        if (imageUrl) {
+            profileImagePreview.src = imageUrl;
+            profileImagePreview.style.display = 'block';
+
+            profileImagePreview.onerror = () => {
+                profileImagePreview.style.display = 'none';
+                showMyPageInitials(username);
+            };
+        } else {
+            showMyPageInitials(username);
+        }
+    }
+
+    /**
+     * 마이페이지에서 첫 글자 아바타를 표시하는 함수
+     * @param {string} username - 사용자 이름
+     */
+    function showMyPageInitials(username) {
+        if (!username || !initialsPreview) return;
+        initialsPreview.textContent = username.charAt(0);
+        initialsPreview.style.backgroundColor = generateColorFromUsername(username);
+        initialsPreview.style.display = 'flex';
+    }
+
+    /**
+     * 헤더의 프로필 UI를 즉시 업데이트하는 도우미 함수
+     * @param {object | null} user - 사용자 객체
+     */
+    function updateHeaderProfileImmediately(user) {
+        if (!userProfileImageInHeader || !userInitialsAvatarInHeader) return;
+
+        if (defaultProfileIconInHeader) defaultProfileIconInHeader.style.display = 'none';
+        userProfileImageInHeader.style.display = 'none';
+        userInitialsAvatarInHeader.style.display = 'none';
+
+        if (user && user.profile_image_url) {
+            userProfileImageInHeader.src = user.profile_image_url + `?t=${new Date().getTime()}`; // 캐시 방지
+            userProfileImageInHeader.style.display = 'block';
+            userProfileImageInHeader.onerror = () => {
+                userProfileImageInHeader.style.display = 'none';
+                showHeaderInitialsImmediately(user.username);
+            };
+        } else if (user && user.username) {
+            showHeaderInitialsImmediately(user.username);
+        } else {
+            if (defaultProfileIconInHeader) defaultProfileIconInHeader.style.display = 'block';
+        }
+    }
+    
+    function showHeaderInitialsImmediately(username) {
+        if (!username || !userInitialsAvatarInHeader) return;
+        userInitialsAvatarInHeader.textContent = username.charAt(0);
+        userInitialsAvatarInHeader.style.backgroundColor = generateColorFromUsername(username);
+        userInitialsAvatarInHeader.style.display = 'flex';
+    }
+
+
     // --- 페이지 로드 시 사용자 프로필 정보 가져오기 ---
     const loadUserProfile = async () => {
         try {
@@ -39,23 +130,21 @@ function initializeMyPage() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!response.ok) {
-                if (response.status === 403) {
+                 if (response.status === 403) {
                      alert('세션이 만료되었습니다. 다시 로그인해주세요.');
                      localStorage.clear();
                      window.location.href = '/login';
                 }
                 throw new Error('프로필 정보를 불러오는데 실패했습니다.');
             }
+            
             const user = await response.json();
             usernameInput.value = user.username;
             emailInput.value = user.email;
             nameInput.value = user.name;
             bioTextarea.value = user.bio || '';
-            if (user.profile_image_url) {
-                profileImagePreview.src = user.profile_image_url;
-            } else {
-                profileImagePreview.src = 'default-profile.png';
-            }
+            
+            updateMyPagePreview(user.profile_image_url, user.username);
         } catch (error) {
             if (error.message.includes('로그인')) return;
             console.error('프로필 로드 오류:', error);
@@ -116,7 +205,7 @@ function initializeMyPage() {
         }
         e.target.value = '';
     });
-
+    
     // --- 크롭 모달 '취소' 버튼 ---
     cancelCropButton.addEventListener('click', () => {
         cropModal.style.display = 'none';
@@ -127,7 +216,7 @@ function initializeMyPage() {
     });
 
     // --- 크롭 모달 '저장' 버튼 (크롭 및 업로드) ---
-    saveCropButton.addEventListener('click', async () => {
+    saveCropButton.addEventListener('click', () => {
         if (!cropper) return;
         
         const canvas = cropper.getCroppedCanvas({
@@ -151,24 +240,19 @@ function initializeMyPage() {
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
+                
                 alert(result.message);
                 
-                if (result.imageUrl) {
-                    const newImageUrl = result.imageUrl + `?t=${new Date().getTime()}`;
-                    profileImagePreview.src = newImageUrl;
-                    
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    if (userData) {
-                        userData.profile_image_url = result.imageUrl;
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        
-                        if (userProfileImageInHeader && defaultProfileIconInHeader) {
-                            userProfileImageInHeader.src = newImageUrl;
-                            userProfileImageInHeader.style.display = 'block';
-                            defaultProfileIconInHeader.style.display = 'none';
-                        }
-                    }
+                const newImageUrl = result.imageUrl;
+                updateMyPagePreview(newImageUrl, usernameInput.value);
+                
+                const userData = JSON.parse(localStorage.getItem('userData'));
+                if (userData) {
+                    userData.profile_image_url = newImageUrl;
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    updateHeaderProfileImmediately(userData);
                 }
+                
                 cancelCropButton.click();
             } catch (error) {
                 console.error('이미지 업로드 오류:', error);
@@ -179,7 +263,7 @@ function initializeMyPage() {
 
     // --- 프로필 이미지 삭제 로직 ---
     deleteImageButton.addEventListener('click', async () => {
-        if (!confirm("정말로 프로필 사진을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+        if (!confirm("정말로 프로필 사진을 삭제하시겠습니까?")) {
             return;
         }
         try {
@@ -189,20 +273,16 @@ function initializeMyPage() {
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.message);
+            
             alert(result.message);
             
-            profileImagePreview.src = 'default-profile.png';
+            updateMyPagePreview(null, usernameInput.value);
             
             const userData = JSON.parse(localStorage.getItem('userData'));
             if (userData) {
                 userData.profile_image_url = null;
                 localStorage.setItem('userData', JSON.stringify(userData));
-                
-                if (userProfileImageInHeader && defaultProfileIconInHeader) {
-                    userProfileImageInHeader.src = "";
-                    userProfileImageInHeader.style.display = 'none';
-                    defaultProfileIconInHeader.style.display = 'block';
-                }
+                updateHeaderProfileImmediately(userData);
             }
         } catch (error) {
             console.error('이미지 삭제 오류:', error);

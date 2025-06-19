@@ -1,26 +1,29 @@
-<!-- 이 파일은 독립적으로 실행되지 않고 다른 HTML에 삽입될 부분이므로 <html>, <head>, <body> 태그가 없습니다. -->
+<!-- frontend/header.html (수정 후) -->
+<div class="top-bar">
+  <a href="/"><img src="/memorab.png" alt="Memora Logo" width="300"></a>
+</div>
 
-    <div class="top-bar">
-        <a href="/"><img src="/memorab.png" alt="Memora Logo" width="300"></a>
-      </div>
-      
-      <div class="auth-section-wrapper">
-        <a href="/login" class="login-button" id="loginButton">로그인</a>
-        <div class="profile-container" id="profileContainer" style="display: none;">
-          <button type="button" class="profile-button icon-button" id="profileButton">
-            <i class="fas fa-user-circle" id="defaultProfileIcon"></i>
-            <img src="" alt="Profile Image" id="userProfileImage" style="display: none;">
-          </button>
-          <div class="dropdown-content" id="profileDropdown">
-            <div class="dropdown-header" id="dropdownUserNickname">사용자 닉네임</div>
-            <hr class="dropdown-divider">
-            
-            <a href="/mypage">마이페이지</a>
-            <a href="#" id="logoutButton">로그아웃</a>
-            <a href="#" id="withdrawLink">회원탈퇴</a>
-            <a href="/admin/dashboard" id="adminDashboardLink" style="display: none; background-color: #e8eaf6; font-weight: bold;">
-              <i class="fas fa-cog"></i> 관리자 화면
-            </a>
-          </div>
-        </div>
-      </div>
+<div class="auth-section-wrapper">
+  <a href="/login" class="login-button" id="loginButton">로그인</a>
+  <div class="profile-container" id="profileContainer" style="display: none;">
+    <button type="button" class="profile-button icon-button" id="profileButton">
+      <!-- ▼▼▼ 3가지 상태를 위한 요소들 ▼▼▼ -->
+      <!-- 1. 기본 아이콘 (아이콘 폰트) -->
+      <i class="fas fa-user-circle" id="defaultProfileIcon"></i>
+      <!-- 2. 사용자가 설정한 프로필 이미지 -->
+      <img src="" alt="Profile Image" id="userProfileImage" style="display: none;">
+      <!-- 3. 첫 글자 아바타 (새로 추가) -->
+      <div class="initials-avatar" id="userInitialsAvatar" style="display: none;"></div>
+    </button>
+    <div class="dropdown-content" id="profileDropdown">
+      <div class="dropdown-header" id="dropdownUserNickname">사용자 닉네임</div>
+      <hr class="dropdown-divider">
+      <a href="/mypage">마이페이지</a>
+      <a href="#" id="logoutButton">로그아웃</a>
+      <a href="#" id="withdrawLink">회원탈퇴</a>
+      <a href="/admin/dashboard" id="adminDashboardLink" style="display: none; background-color: #e8eaf6; font-weight: bold;">
+        <i class="fas fa-cog"></i> 관리자 화면
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,10 +1,26 @@
-// auth.js
+// frontend/auth.js
 
 /**
- * 모든 인증 관련 로직을 이 함수 안에 캡슐화합니다.
- * 이렇게 하면 load-header.js와 같은 다른 스크립트에서
- * 헤더가 완전히 로드된 후, 이 함수를 명시적으로 호출할 수 있습니다.
+ * 사용자 이름(문자열)을 기반으로 고유한 HEX 색상 코드를 생성합니다.
+ * @param {string} str - 색상을 생성할 기준 문자열
+ * @returns {string} - HEX 색상 코드 (예: '#aabbcc')
  */
+function generateColorFromUsername(str) {
+    if (!str) return '#CCCCCC'; // 이름이 없으면 기본 회색 반환
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = '#';
+    for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        // 너무 밝거나 어두운 색상을 피하기 위해 색상 범위를 80-200 사이로 조정
+        const adjustedValue = 80 + (value % 120);
+        color += ('00' + adjustedValue.toString(16)).substr(-2);
+    }
+    return color;
+}
+
 function initializeAuth() {
     // 1. 필요한 DOM 요소들을 모두 가져옵니다.
     const loginButton = document.getElementById('loginButton');
@@ -15,24 +31,69 @@ function initializeAuth() {
     const logoutButton = document.getElementById('logoutButton');
     const withdrawLink = document.getElementById('withdrawLink');
     const adminDashboardLink = document.getElementById('adminDashboardLink');
+
+    // 프로필 상태를 표시할 3가지 요소를 모두 가져옵니다.
     const defaultProfileIcon = document.getElementById('defaultProfileIcon');
     const userProfileImage = document.getElementById('userProfileImage');
-
+    const userInitialsAvatar = document.getElementById('userInitialsAvatar');
+    
     // 2. localStorage에서 인증 토큰과 사용자 데이터를 가져옵니다.
     const authToken = localStorage.getItem('authToken');
     const userDataString = localStorage.getItem('userData');
     let currentUser = null;
 
-    // 사용자 데이터가 문자열 형태로 있으면 JSON 객체로 파싱합니다.
     if (userDataString) {
         try {
             currentUser = JSON.parse(userDataString);
         } catch (e) {
             console.error("사용자 데이터 파싱 오류:", e);
-            // 파싱 오류 시, 잘못된 데이터를 삭제합니다.
             localStorage.removeItem('userData');
             localStorage.removeItem('authToken');
         }
+    }
+
+    /**
+     * 프로필 UI를 업데이트하는 함수
+     * @param {object | null} user - 사용자 객체
+     */
+    function updateProfileUI(user) {
+        if (!defaultProfileIcon || !userProfileImage || !userInitialsAvatar) return;
+
+        // 모든 프로필 관련 요소를 일단 숨깁니다.
+        defaultProfileIcon.style.display = 'none';
+        userProfileImage.style.display = 'none';
+        userInitialsAvatar.style.display = 'none';
+
+        if (user && user.profile_image_url) {
+            // 프로필 이미지가 있는 경우
+            userProfileImage.src = user.profile_image_url;
+            userProfileImage.style.display = 'block';
+
+            // 이미지 로딩 실패 시 첫 글자 아바타를 보여줍니다.
+            userProfileImage.onerror = () => {
+                userProfileImage.style.display = 'none';
+                showInitialsAvatar(user.username);
+            };
+        } else if (user && user.username) {
+            // 프로필 이미지는 없지만, 사용자 이름이 있는 경우
+            showInitialsAvatar(user.username);
+        } else {
+            // 아무 정보도 없는 경우 (비로그인 등)
+            defaultProfileIcon.style.display = 'block';
+        }
+    }
+
+    /**
+     * 첫 글자 아바타를 표시하는 함수
+     * @param {string} username - 사용자 이름
+     */
+    function showInitialsAvatar(username) {
+        if (!username || !userInitialsAvatar) return;
+        
+        const firstLetter = username.charAt(0);
+        userInitialsAvatar.textContent = firstLetter;
+        userInitialsAvatar.style.backgroundColor = generateColorFromUsername(username);
+        userInitialsAvatar.style.display = 'flex';
     }
 
     // 3. 로그인 상태 여부에 따라 UI를 업데이트합니다.
@@ -41,24 +102,12 @@ function initializeAuth() {
         if (loginButton) loginButton.style.display = 'none';
         if (profileContainer) profileContainer.style.display = 'inline-block';
 
-        // 드롭다운 헤더에 사용자 닉네임 표시
         if (dropdownUserNickname) {
-            if (currentUser.username) {
-                dropdownUserNickname.textContent = `${currentUser.username}님`;
-            } else {
-                dropdownUserNickname.textContent = '내 정보';
-            }
+            dropdownUserNickname.textContent = `${currentUser.username}님`;
         }
 
-        // 사용자의 프로필 이미지 URL 유무에 따라 이미지 또는 기본 아이콘을 표시
-        if (currentUser.profile_image_url && userProfileImage && defaultProfileIcon) {
-            userProfileImage.src = currentUser.profile_image_url;
-            userProfileImage.style.display = 'block';
-            defaultProfileIcon.style.display = 'none';
-        } else if (userProfileImage && defaultProfileIcon) {
-            userProfileImage.style.display = 'none';
-            defaultProfileIcon.style.display = 'block';
-        }
+        // 프로필 UI 업데이트 로직 호출
+        updateProfileUI(currentUser);
 
         // 사용자의 역할(role)이 'admin'이면 관리자 메뉴 링크를 표시
         if (currentUser.role === 'admin' && adminDashboardLink) {
@@ -76,7 +125,7 @@ function initializeAuth() {
     // 프로필 버튼 클릭 시 드롭다운 메뉴 토글
     if (profileButton && profileDropdown) {
         profileButton.addEventListener('click', (event) => {
-            event.stopPropagation(); // 이벤트가 부모 요소로 전파되는 것을 막음
+            event.stopPropagation();
             const isVisible = profileDropdown.style.display === 'block';
             profileDropdown.style.display = isVisible ? 'none' : 'block';
         });
@@ -96,12 +145,11 @@ function initializeAuth() {
     if (logoutButton) {
         logoutButton.addEventListener('click', (event) => {
             event.preventDefault();
-            // 로컬 스토리지에서 인증 관련 데이터 모두 삭제
             localStorage.removeItem('authToken');
             localStorage.removeItem('userData');
             localStorage.removeItem('rememberedUsername');
             alert('로그아웃 되었습니다.');
-            window.location.href = '/login'; // 로그인 페이지로 이동
+            window.location.href = '/login';
         });
     }
 
@@ -119,7 +167,6 @@ function initializeAuth() {
                 }
 
                 try {
-                    // 회원탈퇴 API 호출
                     const response = await fetch('/api/user/withdraw', {
                         method: 'DELETE',
                         headers: {
@@ -130,11 +177,10 @@ function initializeAuth() {
                     if (response.ok) {
                         const data = await response.json();
                         alert(data.message || '회원탈퇴가 성공적으로 완료되었습니다.');
-                        // 탈퇴 성공 시, 로그아웃 처리와 동일하게 로컬 스토리지 클리어 및 리디렉션
                         localStorage.removeItem('authToken');
                         localStorage.removeItem('userData');
                         localStorage.removeItem('rememberedUsername');
-                        window.location.href = '/'; // 메인 페이지로 리디렉션
+                        window.location.href = '/';
                     } else {
                         let errorMessage = '회원탈퇴 처리 중 오류가 발생했습니다.';
                         try {
@@ -152,16 +198,4 @@ function initializeAuth() {
             }
         });
     }
-} // initializeAuth 함수 끝
-
-
-/**
- * 이 스크립트가 <script> 태그로 HTML에 직접 포함되는 구형 방식을 지원하기 위한 코드입니다.
- * 만약 페이지 로딩 시점에 이 스크립트가 이미 있다면, DOMContentLoaded 이벤트를 기다려
- * initializeAuth 함수를 실행합니다.
- * load-header.js를 사용하는 새로운 방식에서는 이 코드가 직접 실행되기보다는,
- * load-header.js가 스크립트 로드 후 initializeAuth()를 명시적으로 호출합니다.
- */
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeAuth);
 }

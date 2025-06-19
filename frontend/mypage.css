@@ -18,10 +18,16 @@
     gap: 30px;
 }
 
+/* ▼▼▼ 이 부분이 수정되었습니다 ▼▼▼ */
 .profile-image-section {
     flex-basis: 200px;
-    text-align: center;
+    /* Flexbox를 사용하여 내부 아이템을 정렬합니다. */
+    display: flex;
+    flex-direction: column; /* 아이템을 세로로 쌓습니다. */
+    align-items: center;    /* 아이템을 가로축 중앙에 정렬합니다. */
 }
+/* ▲▲▲ 수정 완료 ▲▲▲ */
+
 
 #profileImagePreview {
     width: 150px;
@@ -53,7 +59,7 @@
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-sizing: border-box; /* padding이 width에 포함되도록 */
+    box-sizing: border-box;
 }
 
 .form-group input:read-only {
@@ -145,4 +151,22 @@
 
 .modal-actions button {
     margin-left: 10px;
+}
+
+/* 마이페이지용 첫 글자 아바타 스타일 (더 큼) */
+.initials-avatar-large {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 3px solid #eee;
+    margin-bottom: 15px;
+    background-color: #ccc;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 75px;
+    font-weight: bold;
+    text-transform: uppercase;
+    /* margin-left/right auto는 이제 필요 없습니다. */
 }
