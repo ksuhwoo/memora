@@ -29,7 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
     chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
         if (chatInput.value.trim()) {
-            socket.emit('chat message', chatInput.value.trim());
+            // [변경] 메시지와 함께 클라이언트에서 생성한 고유 ID를 보냅니다.
+            const messageData = {
+                message: chatInput.value.trim(),
+                clientId: crypto.randomUUID() // 예: "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed"
+            };
+            socket.emit('chat message', messageData);
             chatInput.value = '';
         }
     });

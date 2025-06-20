@@ -476,34 +476,46 @@ io.on('connection', async (socket) => {
     console.error('채팅 기록을 불러오는 중 오류 발생:', error);
   }
 
-  // 메시지를 받을 때의 로직은 기존과 동일하게 유지합니다 (이미 올바른 형식이므로).
-  socket.on('chat message', async (msg) => {
+  // 클라이언트로부터 메시지를 받으면
+  socket.on('chat message', async (data) => {
+    // [변경] 클라이언트에서 보낸 객체에서 메시지와 고유 ID를 추출합니다.
+    const { message, clientId } = data;
+    if (!message || !clientId) return; // 데이터 형식이 올바르지 않으면 무시
+
+    let connection;
     try {
-        const connection = await dbPool.getConnection();
-        await connection.execute(
-            'INSERT INTO chat_messages (user_id, message) VALUES (?, ?)',
-            [socket.user.userId, msg]
-        );
-        connection.release();
-
-         const [result] = await connection.execute(
-            'INSERT INTO chat_messages (user_id, message) VALUES (?, ?)',
-            [socket.user.userId, msg]
+        connection = await dbPool.getConnection();
+        
+        // [변경] client_message_id와 함께 메시지를 DB에 저장합니다.
+        const [result] = await connection.execute(
+            'INSERT INTO chat_messages (user_id, message, client_message_id) VALUES (?, ?, ?)',
+            [socket.user.userId, message, clientId]
         );
 
+        // DB 저장 성공 시, 모든 클라이언트에게 새 메시지를 전송합니다.
         io.emit('chat message', {
-            id: result.insertId, // 새로 삽입된 메시지의 ID
+            id: result.insertId,
             is_deleted: false,
             user: {
                 userId: socket.user.userId,
                 username: socket.user.username,
                 profile_image_url: socket.user.profile_image_url
             },
-            message: msg,
+            message: message,
             timestamp: new Date()
         });
+
     } catch (error) {
-        console.error('메시지 저장 중 오류 발생:', error);
+        // [중요] "Duplicate entry" 에러는 정상적인 중복 요청이므로 무시합니다.
+        // 에러 코드 'ER_DUP_ENTRY'는 MySQL/MariaDB 기준입니다.
+        if (error.code === 'ER_DUP_ENTRY') {
+            console.log(`중복 메시지(ID: ${clientId}) 수신. 처리하지 않음.`);
+        } else {
+            // 그 외 다른 에러는 콘솔에 기록합니다.
+            console.error('메시지 저장 중 오류 발생:', error);
+        }
+    } finally {
+        if (connection) connection.release();
     }
   });
 
