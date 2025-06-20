@@ -10,10 +10,28 @@ const multer = require('multer');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
+// ▼▼▼ 여기에 추가 ▼▼▼
+const http = require('http');
+const { Server } = require("socket.io");
+// ▲▲▲ 여기까지 추가 ▲▲▲
+
 const dbPool = require('./db');
 
 const app = express();
 const BACKEND_PORT = process.env.BACKEND_PORT || 3001;
+
+// ▼▼▼ 여기에 추가 ▼▼▼
+// Express 앱을 http 서버로 감싸기
+const server = http.createServer(app);
+
+// Socket.IO 서버 생성 및 CORS 설정
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ["GET", "POST"]
+  }
+});
+// ▲▲▲ 여기까지 추가 ▲▲▲
 
 // --- 파일 업로드 폴더 생성 (없을 경우) ---
 const uploadDir = 'uploads';
@@ -401,6 +419,89 @@ const requireAdmin = (req, res, next) => {
       }
   });
 };
+// ===================================================
+//                 Socket.IO 로직
+// ===================================================
+io.use((socket, next) => {
+  const token = socket.handshake.query.token;
+  if (!token) {
+    return next(new Error('Authentication error: Token not provided'));
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, userPayload) => {
+    if (err) {
+      return next(new Error('Authentication error: Invalid token'));
+    }
+    socket.user = userPayload;
+    next();
+  });
+});
+
+io.on('connection', async (socket) => {
+  console.log(`사용자 연결됨: ${socket.user.username}`);
+
+  // [수정] DB에서 불러온 데이터를 클라이언트가 기대하는 형식으로 변환합니다.
+  try {
+    const connection = await dbPool.getConnection();
+    const [messages] = await connection.execute(
+        `SELECT cm.id, cm.message, cm.created_at as timestamp,
+            u.id as userId, u.username, u.profile_image_url
+        FROM chat_messages cm
+        JOIN users u ON cm.user_id = u.id
+        ORDER BY cm.created_at DESC LIMIT 50`
+    );
+    connection.release();
+
+    // ▼▼▼ 여기가 핵심 수정 부분입니다! ▼▼▼
+    // 평평한 DB 결과를 중첩된 객체 배열로 변환합니다.
+    const formattedHistory = messages.map(msg => {
+      return {
+        user: { // user 객체 생성
+          userId: msg.userId,
+          username: msg.username,
+          profile_image_url: msg.profile_image_url
+        },
+        message: msg.message,
+        timestamp: msg.timestamp
+      };
+    });
+    // ▲▲▲ 여기까지가 핵심 수정 부분입니다! ▲▲▲
+
+    // 변환된 데이터를 순서를 뒤집어 전송합니다 (오래된 메시지부터 보이도록).
+    socket.emit('chat history', formattedHistory.reverse());
+
+  } catch (error) {
+    console.error('채팅 기록을 불러오는 중 오류 발생:', error);
+  }
+
+  // 메시지를 받을 때의 로직은 기존과 동일하게 유지합니다 (이미 올바른 형식이므로).
+  socket.on('chat message', async (msg) => {
+    try {
+        const connection = await dbPool.getConnection();
+        await connection.execute(
+            'INSERT INTO chat_messages (user_id, message) VALUES (?, ?)',
+            [socket.user.userId, msg]
+        );
+        connection.release();
+
+        io.emit('chat message', {
+            user: {
+                userId: socket.user.userId,
+                username: socket.user.username,
+                profile_image_url: socket.user.profile_image_url
+            },
+            message: msg,
+            timestamp: new Date()
+        });
+    } catch (error) {
+        console.error('메시지 저장 중 오류 발생:', error);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`사용자 연결 끊어짐: ${socket.user.username}`);
+  });
+});
+
 // ------------------------
 
 // ===================================================
@@ -860,6 +961,6 @@ app.get('/api/admin/logs', requireAdmin, async (req, res) => {
 // --------------------
 
 // --- 서버 시작 ---
-app.listen(BACKEND_PORT, () => {
+server.listen(BACKEND_PORT, () => {
   console.log(`백엔드 API 서버가 http://localhost:${BACKEND_PORT} 에서 실행 중입니다.`);
 });

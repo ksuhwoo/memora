@@ -31,3 +31,123 @@ body {
     text-align: center;
     margin-top: 20px; /* 위쪽 여백 */
 }
+/* --- 실시간 채팅 스타일 (트위치 스타일) --- */
+.chat-container {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 340px;
+  height: 500px;
+  background-color: #18181b; /* 어두운 배경 */
+  color: #efeff1; /* 기본 글자색 */
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease-in-out;
+  z-index: 999;
+  font-family: sans-serif;
+}
+.chat-container.chat-closed {
+  height: 50px;
+  width: 150px;
+  overflow: hidden;
+}
+.chat-header {
+  background-color: #9146ff; /* 트위치 보라색 */
+  color: white;
+  padding: 0 15px;
+  height: 50px;
+  line-height: 50px;
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+.chat-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.chat-messages {
+  list-style-type: none;
+  margin: 0;
+  padding: 15px;
+  flex-grow: 1;
+  overflow-y: auto;
+  word-wrap: break-word;
+}
+
+/* [변경] 개별 메시지 스타일 (flex로 정렬) */
+.chat-message {
+  padding: 4px 0;
+  display: flex;
+  align-items: center; /* 세로 중앙 정렬 */
+}
+
+/* [추가] 인라인 채팅 아바타 스타일 */
+.chat-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 6px; /* 아바타와 이름 사이 간격 */
+  flex-shrink: 0; /* 컨테이너가 줄어들어도 찌그러지지 않게 */
+}
+.chat-avatar.image {
+  object-fit: cover;
+}
+.chat-avatar.initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.chat-message .username {
+  font-weight: bold;
+  cursor: pointer;
+}
+.chat-message .message-text {
+  margin-left: 0.5em;
+}
+.system-message {
+  text-align: center;
+  font-size: 12px;
+  color: #a0a0ab;
+  margin: 5px 0;
+  font-style: italic;
+}
+.chat-form {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #4d4d53;
+}
+#chatInput {
+  flex-grow: 1;
+  background-color: #3a3a3d;
+  border: 1px solid #4d4d53;
+  color: #efeff1;
+  border-radius: 5px;
+  padding: 0 10px;
+  height: 40px;
+  outline: none;
+}
+#chatInput::placeholder {
+  color: #a0a0ab;
+}
+#chatForm button {
+  background: #9146ff;
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+  margin-left: 10px;
+  cursor: pointer;
+}

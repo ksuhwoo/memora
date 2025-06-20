@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MEMORA PROJECT</title>
   
-  <!-- ▼▼▼ 분리된 header.css와 페이지 공통 style.css를 링크합니다 ▼▼▼ -->
   <link rel="stylesheet" href="header.css">
   <link rel="stylesheet" href="style.css">
   
@@ -14,11 +13,24 @@
 </head>
 <body>
 
-  <!-- ▼▼▼ 헤더가 삽입될 자리 (placeholder) ▼▼▼ -->
   <header id="header-placeholder"></header>
-  <!-- ▲▲▲ 여기에 header.html의 내용이 동적으로 삽입됩니다 ▲▲▲ -->
 
-  <!-- 이제부터는 이 페이지의 고유한 내용만 남습니다. -->
+  <!-- ▼▼▼ 여기에 추가 ▼▼▼ -->
+  <div id="chatContainer" class="chat-container chat-closed">
+    <div id="chatHeader" class="chat-header">
+      <span>실시간 채팅</span>
+      <i class="fas fa-comments"></i>
+    </div>
+    <div class="chat-body">
+      <ul id="chatMessages" class="chat-messages"></ul>
+      <form id="chatForm" class="chat-form">
+        <input id="chatInput" autocomplete="off" placeholder="메시지를 입력하세요..." />
+        <button type="submit"><i class="fas fa-paper-plane"></i></button>
+      </form>
+    </div>
+  </div>
+  <!-- ▲▲▲ 여기까지 추가 ▲▲▲ -->
+
   <div class="logo" style="text-align: center;">
     <img src="memoralogo.png" alt="memora logo" width="500px">
   </div>
@@ -28,8 +40,13 @@
     <p>HTML for testing</p>
   </div>
   
-  <!-- ▼▼▼ auth.js 대신 load-header.js를 로드합니다 ▼▼▼ -->
-  <script src="load-header.js"></script>
+  <!-- ▼▼▼ 스크립트 로드 ▼▼▼ -->
+  <!-- 1. Socket.IO 클라이언트 라이브러리 로드 -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- 2. 헤더 및 인증 로직 로드 (generateColorFromUsername 함수 포함) -->
+  <script src="/load-header.js"></script>
+  <!-- 3. 채팅 클라이언트 로직 로드 -->
+  <script src="/chat-client.js"></script>
 
 </body>
 </html>
