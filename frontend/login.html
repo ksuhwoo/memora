@@ -4,25 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인</title>
+    <!-- ▼▼▼ [추가] Font Awesome 아이콘 라이브러리 링크 ▼▼▼ -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- ▲▲▲ [추가] 여기까지 ▲▲▲ -->
     <link rel="stylesheet" href="login.css">
     <link rel="icon" href="memora.ico">
     <script src="https://hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body>
     <div class="top-bar">
-        <a href="/"><img src="memorab.png" width="300" alt="Memora 로고"></a> <!-- alt 속성 추가 -->
+        <a href="/"><img src="memorab.png" width="300" alt="Memora 로고"></a>
     </div>
 
-    <form id="loginForm"> <!-- form 태그와 id 추가 -->
+    <form id="loginForm">
         <table>
             <tr>
                 <td><h2>로그인</h2></td>
             </tr>
             <tr>
-                <td><input type="text" id="username" placeholder="ID" required></td> <!-- id 및 required 추가 -->
+                <td><input type="text" id="username" placeholder="ID" required></td>
             </tr>
             <tr>
-                <td><input type="password" id="password" placeholder="Password" required></td> <!-- id 및 required 추가 -->
+                <!-- ▼▼▼ [수정] 비밀번호 입력창 구조 변경 ▼▼▼ -->
+                <td>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" placeholder="Password" required>
+                        <i class="fa-solid fa-eye-slash" id="toggle-password"></i>
+                    </div>
+                </td>
+                <!-- ▲▲▲ [수정] 여기까지 ▲▲▲ -->
             </tr>
             <tr>
                <td>
@@ -37,15 +47,15 @@
                 </td>
             </tr>
            <tr>
-                <td><input type="submit" value="로그인" class="btn"></td> <!-- onclick 제거 -->
+                <td><input type="submit" value="로그인" class="btn"></td>
             </tr>
             <tr>
-                <td class="join"><a href="signup">회원가입</a></td> <!-- signup.html로 가정 -->
+                <td class="join"><a href="signup">회원가입</a></td>
             </tr>
         </table>
     </form>
-    <div id="messageArea" style="text-align: center; margin-top: 15px; min-height: 20px;"></div> <!-- 메시지 표시 영역 및 최소 높이 설정 -->
+    <div id="messageArea" style="text-align: center; margin-top: 15px; min-height: 20px;"></div>
 
-    <script src="login.js"></script> <!-- JavaScript 파일 포함 -->
+    <script src="login.js"></script>
 </body>
 </html>

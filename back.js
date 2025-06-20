@@ -443,7 +443,8 @@ io.on('connection', async (socket) => {
   try {
     const connection = await dbPool.getConnection();
     const [messages] = await connection.execute(
-        `SELECT cm.id, cm.message, cm.created_at as timestamp,
+    `SELECT
+            cm.id, cm.message, cm.is_deleted, cm.created_at as timestamp,
             u.id as userId, u.username, u.profile_image_url
         FROM chat_messages cm
         JOIN users u ON cm.user_id = u.id
@@ -455,6 +456,8 @@ io.on('connection', async (socket) => {
     // 평평한 DB 결과를 중첩된 객체 배열로 변환합니다.
     const formattedHistory = messages.map(msg => {
       return {
+        id: msg.id, // 메시지 고유 ID
+        is_deleted: msg.is_deleted, // 삭제 여부
         user: { // user 객체 생성
           userId: msg.userId,
           username: msg.username,
@@ -483,7 +486,14 @@ io.on('connection', async (socket) => {
         );
         connection.release();
 
+         const [result] = await connection.execute(
+            'INSERT INTO chat_messages (user_id, message) VALUES (?, ?)',
+            [socket.user.userId, msg]
+        );
+
         io.emit('chat message', {
+            id: result.insertId, // 새로 삽입된 메시지의 ID
+            is_deleted: false,
             user: {
                 userId: socket.user.userId,
                 username: socket.user.username,
@@ -716,6 +726,34 @@ app.delete('/api/user/withdraw', authenticateToken, async (req, res) => {
         res.status(500).json({ message: '회원탈퇴 처리 중 서버 내부 오류가 발생했습니다.' });
     } finally {
         if (connection) connection.release();
+    }
+});
+
+// 공개용 사용자 프로필 조회 API
+app.get('/api/users/:username', authenticateToken, async (req, res) => {
+    const { username } = req.params;
+    let connection;
+    try {
+        connection = await dbPool.getConnection();
+        // 자기소개, 프로필 사진, 이름만 선택적으로 조회합니다.
+        const [users] = await connection.execute(
+            `SELECT username, profile_image_url, bio FROM ${process.env.DB_NAME}.users WHERE username = ?`,
+            [username]
+        );
+        connection.release();
+
+        if (users.length === 0) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+        res.status(200).json(users[0]);
+
+    } catch (error) {
+        console.error('사용자 프로필 조회 오류:', error);
+        res.status(500).json({ message: '프로필 조회 중 서버 오류가 발생했습니다.' });
+    } finally {
+        if (connection && connection.connection._closing === false) {
+            connection.release();
+        }
     }
 });
 
@@ -957,6 +995,64 @@ app.get('/api/admin/logs', requireAdmin, async (req, res) => {
   } finally {
     if (connection) connection.release();
   }
+});
+
+// ▼▼▼ 여기에 추가하세요 ▼▼▼
+app.delete('/api/admin/chat/history', requireAdmin, async (req, res) => {
+    console.log(`--- /api/admin/chat/history 요청 받음 (관리자: ${req.user.username}) ---`);
+    let connection;
+    try {
+        connection = await dbPool.getConnection();
+        // TRUNCATE TABLE은 모든 행을 빠르게 삭제하고 auto_increment 값을 초기화합니다.
+        await connection.execute(`TRUNCATE TABLE ${process.env.DB_NAME}.chat_messages`);
+        connection.release();
+
+        // [중요] 모든 연결된 클라이언트에게 채팅창을 비우라는 이벤트를 보냅니다.
+        io.emit('chat cleared', '채팅 기록이 관리자에 의해 삭제되었습니다.');
+
+        res.status(200).json({ message: '모든 채팅 기록이 성공적으로 삭제되었습니다.' });
+
+    } catch (error) {
+        console.error('채팅 기록 삭제 중 DB 오류:', error);
+        res.status(500).json({ message: '채팅 기록 삭제 중 서버 오류가 발생했습니다.' });
+    } finally {
+        if (connection && connection.connection._closing === false) {
+            connection.release();
+        }
+    }
+});
+// ▲▲▲ 여기까지 추가 ▲▲▲
+app.delete('/api/admin/chat/:messageId', requireAdmin, async (req, res) => {
+    const { messageId } = req.params;
+    console.log(`--- /api/admin/chat/${messageId} DELETE 요청 받음 (관리자: ${req.user.username}) ---`);
+    
+    let connection;
+    try {
+        connection = await dbPool.getConnection();
+        // 실제 데이터를 지우는 대신, is_deleted 플래그를 true로 업데이트합니다.
+        const [result] = await connection.execute(
+            `UPDATE ${process.env.DB_NAME}.chat_messages SET is_deleted = TRUE WHERE id = ?`,
+            [messageId]
+        );
+        connection.release();
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: '삭제할 메시지를 찾을 수 없습니다.' });
+        }
+
+        // [중요] 모든 클라이언트에게 어떤 메시지가 삭제되었는지 이벤트를 보냅니다.
+        io.emit('chat message deleted', { messageId: messageId });
+
+        res.status(200).json({ message: '메시지가 성공적으로 삭제되었습니다.' });
+
+    } catch (error) {
+        console.error('채팅 메시지 삭제 중 DB 오류:', error);
+        res.status(500).json({ message: '메시지 삭제 중 서버 오류가 발생했습니다.' });
+    } finally {
+        if (connection && connection.connection._closing === false) {
+            connection.release();
+        }
+    }
 });
 // --------------------
 

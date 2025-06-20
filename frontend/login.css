@@ -18,7 +18,7 @@ table {
   z-index: 1000;
 }
 input[type="text"], input[type="password"] {
-    width: 250px;
+    width: 100%;
     height: 32px;
     font-size: 15px;
     border: 0;
@@ -26,6 +26,7 @@ input[type="text"], input[type="password"] {
     outline: none;
     padding-left: 10px;
     background-color: rgb(233,233,233);
+    box-sizing: border-box;
 }
 .btn {
     width: 263px;
@@ -37,6 +38,7 @@ input[type="text"], input[type="password"] {
     padding-left: 10px;
     color: white;
     background-color: #123458;
+    cursor: pointer;
 }
 .btn:hover {
   background-color: #0a1c30;
@@ -52,6 +54,27 @@ input[type="text"], input[type="password"] {
     color: white;
     background-color: #0a1c30;
 }
+
+.password-wrapper {
+    position: relative;
+    /* ▼▼▼ [수정] 고정 너비를 100%로 변경 ▼▼▼ */
+    width: 100%; 
+    /* ▲▲▲ [수정] 여기까지 ▲▲▲ */
+}
+
+#password {
+    padding-right: 40px;
+}
+
+#toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+}
+
 a:link {
     color : grey;
     text-decoration: none;

@@ -1,5 +1,3 @@
-// frontend/auth.js
-
 /**
  * 사용자 이름(문자열)을 기반으로 고유한 HEX 색상 코드를 생성합니다.
  * @param {string} str - 색상을 생성할 기준 문자열
@@ -31,6 +29,7 @@ function initializeAuth() {
     const logoutButton = document.getElementById('logoutButton');
     const withdrawLink = document.getElementById('withdrawLink');
     const adminDashboardLink = document.getElementById('adminDashboardLink');
+    const clearChatHistoryLink = document.getElementById('clearChatHistoryLink'); // [추가]
 
     // 프로필 상태를 표시할 3가지 요소를 모두 가져옵니다.
     const defaultProfileIcon = document.getElementById('defaultProfileIcon');
@@ -90,7 +89,7 @@ function initializeAuth() {
     function showInitialsAvatar(username) {
         if (!username || !userInitialsAvatar) return;
         
-        const firstLetter = username.charAt(0);
+        const firstLetter = username.charAt(0).toUpperCase();
         userInitialsAvatar.textContent = firstLetter;
         userInitialsAvatar.style.backgroundColor = generateColorFromUsername(username);
         userInitialsAvatar.style.display = 'flex';
@@ -109,9 +108,10 @@ function initializeAuth() {
         // 프로필 UI 업데이트 로직 호출
         updateProfileUI(currentUser);
 
-        // 사용자의 역할(role)이 'admin'이면 관리자 메뉴 링크를 표시
-        if (currentUser.role === 'admin' && adminDashboardLink) {
-            adminDashboardLink.style.display = 'block';
+        // [변경] 사용자의 역할(role)이 'admin'이면 모든 관리자 메뉴를 표시합니다.
+        if (currentUser.role === 'admin') {
+            if (adminDashboardLink) adminDashboardLink.style.display = 'block';
+            if (clearChatHistoryLink) clearChatHistoryLink.style.display = 'block';
         }
 
     } else {
@@ -193,7 +193,35 @@ function initializeAuth() {
                     }
                 } catch (error) {
                     console.error('회원탈퇴 API 호출 중 네트워크 오류:', error);
-                    alert('회원탈퇴 요청 중 네트워크 오류가 발생했습니다. 서버가 실행중인지 확인해주세요.');
+                    alert('회원탈퇴 요청 중 네트워크 오류가 발생했습니다.');
+                }
+            }
+        });
+    }
+
+    // [추가] 채팅 기록 지우기 버튼 이벤트 리스너
+    if (clearChatHistoryLink) {
+        clearChatHistoryLink.addEventListener('click', async (event) => {
+            event.preventDefault();
+            
+            if (confirm("정말로 모든 채팅 기록을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+                const storedAuthToken = localStorage.getItem('authToken');
+                try {
+                    const response = await fetch('/api/admin/chat/history', {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${storedAuthToken}`
+                        }
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.message || '삭제에 실패했습니다.');
+
+                    alert(result.message); // "모든 채팅 기록이 성공적으로 삭제되었습니다."
+                    profileDropdown.style.display = 'none'; // 메뉴 닫기
+
+                } catch (error) {
+                    console.error('채팅 기록 삭제 오류:', error);
+                    alert(`오류: ${error.message}`);
                 }
             }
         });

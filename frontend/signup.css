@@ -1,6 +1,6 @@
 table {
     width: 280px;
-    height: 550px;
+    /* height는 콘텐츠에 따라 자동 조절되도록 auto 또는 제거하는 것이 좋습니다. */
     margin: auto;
     padding-top: 80px;      
 }
@@ -21,13 +21,13 @@ table {
     height: 32px;
     font-size: 15px;
     border: 0;
-    border-color: lightgray;
     border-radius: 5px;
     outline: none;
     padding-left: 10px;
     background-color: rgb(233,233,233);
+    box-sizing: border-box;
 }
-.text {
+.text, input[type="date"] {
     width: 250px;
     height: 32px;
     font-size: 15px;
@@ -36,17 +36,33 @@ table {
     outline: none;
     padding-left: 10px;
     background-color: rgb(233,233,233);
+    box-sizing: border-box;
 }
-select {
-    width: 100px;
-    height: 32px;
-    font-size: 15px;
-    border: 1;
-    border-color: lightgray;
-    border-radius: 5px;
-    outline: none;
-    padding-left: 10px;
+
+/* ▼▼▼ [추가] 비밀번호 보이기/숨기기 기능 관련 스타일 ▼▼▼ */
+.password-wrapper {
+    position: relative;
+    width: 250px; /* .text 클래스 너비와 동일하게 설정 */
 }
+
+/* .password-wrapper 안의 input은 너비 100%를 차지하게 함 */
+.password-wrapper input {
+    width: 100%;
+    /* 아이콘과 겹치지 않도록 오른쪽 패딩 추가 */
+    padding-right: 40px; 
+}
+
+/* 두 아이콘에 동일한 스타일 적용 */
+#toggle-password, #toggle-confirm-password {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+}
+/* ▲▲▲ [추가] 여기까지 ▲▲▲ */
+
 
 body {
     margin: 0;
@@ -63,14 +79,6 @@ table {
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 0 15px rgba(0,0,0,0.1);
-}
-
-.text {
-    width: 200px;
-}
-  
-.email {
-    width: 120px;
 }
   
 .btn {
@@ -95,33 +103,25 @@ table {
     font-size: 16px;
 }
   
-.email-group {
+.email-group, .code-group {
     display: flex;
     align-items: center;
     gap: 5px;
 }
-  
-.code-group {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-/* ▼▼▼ [추가] 커스텀 드롭다운 스타일 ▼▼▼ */
+ 
 .custom-domain-select {
-    position: relative; /* 자식 요소(목록)의 기준점 */
+    position: relative;
     display: inline-block;
-    width: 127px; /* 기존 select 너비와 동일하게 */
+    width: 127px;
 }
 
-/* 드롭다운 입력 필드 */
 #emailDomainInput {
     width: 100%;
-    cursor: pointer; /* 클릭 가능하다는 것을 표시 */
-    padding-right: 25px; /* 화살표를 위한 공간 확보 */
-    box-sizing: border-box; /* 패딩이 너비에 포함되도록 설정 */
+    cursor: pointer;
+    padding-right: 25px;
+    box-sizing: border-box;
 }
 
-/* 드롭다운 화살표 모양 만들기 */
 .custom-domain-select::after {
     content: '';
     position: absolute;
@@ -129,14 +129,13 @@ table {
     right: 10px;
     transform: translateY(-50%);
     border: 5px solid transparent;
-    border-top-color: #333; /* 화살표 색상 */
-    pointer-events: none; /* 화살표를 클릭해도 뒤의 input이 클릭되도록 */
+    border-top-color: #333;
+    pointer-events: none;
 }
 
-/* 도메인 목록 스타일 */
 .domain-list {
     position: absolute;
-    top: 100%; /* 입력창 바로 아래에 위치 */
+    top: 100%;
     left: 0;
     right: 0;
     background-color: white;
@@ -145,21 +144,17 @@ table {
     list-style: none;
     padding: 0;
     margin-top: 5px;
-    z-index: 1001; /* 다른 요소들 위에 보이도록 */
+    z-index: 1001;
     max-height: 200px;
     overflow-y: auto;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-
-    /* 기본적으로 숨김 */
     display: none; 
 }
 
-/* 목록이 활성화되었을 때 스타일 */
 .domain-list.active {
     display: block;
 }
 
-/* 목록의 각 항목 스타일 */
 .domain-list li {
     padding: 8px 12px;
     cursor: pointer;
@@ -167,5 +162,5 @@ table {
 }
 
 .domain-list li:hover {
-    background-color: #f0f0f0; /* 마우스 올렸을 때 배경색 */
+    background-color: #f0f0f0;
 }

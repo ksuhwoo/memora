@@ -1,6 +1,20 @@
 // login.js
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
+    const passwordInput = document.getElementById('password');
+
+        // ▼▼▼ [추가] 비밀번호 보이기/숨기기 기능 추가 ▼▼▼
+    const togglePasswordButton = document.getElementById('toggle-password');
+
+    togglePasswordButton.addEventListener('click', () => {
+        // input의 type을 확인하여 password이면 text로, text이면 password로 변경
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+
+        // 아이콘 모양도 함께 변경 (Font Awesome 클래스 토글)
+        togglePasswordButton.classList.toggle('fa-eye');
+        togglePasswordButton.classList.toggle('fa-eye-slash');
+    });
 
     // 토스트 알림 함수는 이제 사용하지 않으므로 주석 처리하거나 삭제합니다.
     /*

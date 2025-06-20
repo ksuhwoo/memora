@@ -4,29 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원가입</title>
+    <!-- ▼▼▼ [추가] Font Awesome 아이콘 라이브러리 링크 ▼▼▼ -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- ▲▲▲ [추가] 여기까지 ▲▲▲ -->
     <link rel="stylesheet" href="signup.css">
     <link rel="icon" href="memora.ico">
     <script src="https://hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body>
     <div class="top-bar">
-      <a href="/"><img src="memorab.png" width="300"></a>
+      <a href="/"><img src="memorab.png" width="300" alt="Memora 로고"></a>
     </div>
     
     <form id="signupForm"> 
         <table>
-            <!-- ... (아이디, 비밀번호 등 다른 부분은 동일) ... -->
             <tr><td><h2>회원가입</h2></td></tr>
         
             <tr><td>아이디</td></tr>
             <tr><td><input type="text" name="username" id="userId" class="text" required></td></tr>
         
             <tr><td>비밀번호</td></tr>
-            <tr><td><input type="password" name="password" id="password" class="text" required></td></tr>
+            <!-- ▼▼▼ [수정] 비밀번호 입력창 구조 변경 ▼▼▼ -->
+            <tr>
+                <td>
+                    <div class="password-wrapper">
+                        <input type="password" name="password" id="password" class="text" required>
+                        <i class="fa-solid fa-eye-slash" id="toggle-password"></i>
+                    </div>
+                </td>
+            </tr>
+            <!-- ▲▲▲ [수정] 여기까지 ▲▲▲ -->
         
             <tr><td>비밀번호 확인</td></tr>
-            <tr><td><input type="password" name="confirm_password" id="confirmPassword" class="text" required></td></tr>
-        
+            <!-- ▼▼▼ [수정] 비밀번호 확인 입력창 구조 변경 ▼▼▼ -->
+            <tr>
+                <td>
+                    <div class="password-wrapper">
+                        <input type="password" name="confirm_password" id="confirmPassword" class="text" required>
+                        <i class="fa-solid fa-eye-slash" id="toggle-confirm-password"></i>
+                    </div>
+                </td>
+            </tr>
+            <!-- ▲▲▲ [수정] 여기까지 ▲▲▲ -->
+
             <tr><td>이름</td></tr>
             <tr><td><input type="text" name="name" id="name" class="text" required></td></tr>
         
@@ -38,8 +58,6 @@
                 <td>
                     <div class="email-group">
                         <input type="text" id="emailLocal" class="email" required> @ 
-                        
-                        <!-- ▼▼▼ [수정] 커스텀 드롭다운 구조로 전체 변경 ▼▼▼ -->
                         <div class="custom-domain-select">
                             <input type="text" id="emailDomainInput" class="email" readonly>
                             <ul id="domainList" class="domain-list">
@@ -50,9 +68,7 @@
                                 <li data-value="custom">직접 입력</li>
                             </ul>
                         </div>
-                        <!-- ▲▲▲ [수정] 여기까지 ▲▲▲ -->
-
-                        <button type="button" class="btn" onclick="sendCode()">인증코드 전송</button>
+                        <button type="button" id="sendCodeBtn" class="btn">인증코드 전송</button>
                     </div>
                 </td>
             </tr>
@@ -62,13 +78,13 @@
                 <td>
                     <div class="code-group">
                         <input type="text" id="verificationCode" class="text" placeholder="인증 코드 입력">
-                        <button type="button" class="btn btn-small" onclick="verifyCode()">확인</button>
+                        <button type="button" id="verifyCodeBtn" class="btn btn-small">확인</button>
                         <span id="timerDisplay" style="margin-left: 10px; color: red; font-weight: bold;"></span>
                     </div>
                 </td>
             </tr>            
             <tr>
-                <td style="padding-top: 15px;"> <!-- 약간의 상단 여백을 주어 보기 좋게 만듭니다 -->
+                <td style="padding-top: 15px;">
                     <div class="h-captcha" data-sitekey="f1b4b9ba-e53e-4eca-a16c-641c266a67e8"></div>
                 </td>
             </tr>

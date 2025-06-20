@@ -47,6 +47,23 @@
   <script src="/load-header.js"></script>
   <!-- 3. 채팅 클라이언트 로직 로드 -->
   <script src="/chat-client.js"></script>
-
+  <!-- ▼▼▼ 여기에 이 코드를 추가하세요 ▼▼▼ -->
+  <div id="userProfileModal" class="user-profile-modal">
+    <div class="modal-content">
+      <div id="modalAvatar" class="modal-avatar"></div>
+      <h3 id="modalUsername" class="modal-username"></h3>
+      <p id="modalBio" class="modal-bio"></p>
+    </div>
+  </div>
+   <div id="customContextMenu" class="custom-context-menu">
+    <ul>
+      <li id="deleteChatMessage">채팅 삭제</li>
+    </ul>
+  </div>
+  <!-- ▲▲▲ 여기까지 추가 ▲▲▲ -->
+  
+  <!-- ▼▼▼ 스크립트 로드 ▼▼▼ -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- ... (나머지 스크립트) -->
 </body>
 </html>
