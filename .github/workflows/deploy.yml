@@ -6,7 +6,7 @@ name: Deploy to Oracle Cloud
 # main 브랜치에 push 이벤트가 발생했을 때 실행됩니다.
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 # 실행될 작업들을 정의합니다.
 jobs:
