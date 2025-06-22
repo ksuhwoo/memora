@@ -24,13 +24,22 @@ jobs:
     - name: Deploy to Server
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.OCI_SSH_HOST }}      # GitHub Secret에서 서버 IP를 가져옴
-        username: ${{ secrets.OCI_SSH_USER }}  # GitHub Secret에서 사용자 이름을 가져옴
-        key: ${{ secrets.OCI_SSH_PRIVATE_KEY }} # GitHub Secret에서 SSH 비공개 키를 가져옴
+        host: ${{ secrets.OCI_SSH_HOST }}
+        username: ${{ secrets.OCI_SSH_USER }}
+        key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        # 💡💡💡 바로 이 script 부분을 아래 내용으로 교체합니다 💡💡💡
         script: |
-          # --- 이 아래부터는 오라클 클라우드 서버에서 실행될 명령어들입니다 ---
-          cd ~/memora  # 실제 프로젝트 폴더 경로로 수정하세요!
-          git pull origin main
-          npm install --production # 새로운 의존성 설치 (프로덕션용)
+          # 1. 먼저, 프로젝트 폴더로 이동합니다.
+          cd ~/memora  # ‼️ 실제 프로젝트 폴더 경로로 수정하세요!
+
+          # 2. git pull의 브랜치 이름을 'master'로 수정합니다. (본인 브랜치에 맞게)
+          git pull origin master
+
+          # 3. ‼️ 여기가 핵심! nvm을 수동으로 로드하여 npm, npx 경로를 알려줍니다.
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+          # 4. 이제 npm, npx, pm2를 모두 사용할 수 있습니다.
+          npm install --production
           npx knex migrate:latest
-          pm2 reload my-app      # PM2로 실행 중인 앱을 무중단 재시작
+          pm2 reload my-app
