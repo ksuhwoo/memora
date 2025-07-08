@@ -1,18 +1,22 @@
-# Dockerfile
+# Dockerfile (개선된 버전)
 
-# 1. 어떤 환경에서 시작할지 지정 (Node.js 18 버전의 가벼운 리눅스)
+# 1. 어떤 환경에서 시작할지 지정
 FROM node:18-alpine
 
-# 2. 앱 코드가 저장될 컨테이너 안의 작업 폴더를 만듭니다.
+# 2. 작업 폴더 지정
 WORKDIR /usr/src/app
 
-# 3. 먼저 package.json 파일들만 복사하여 의존성을 설치합니다.
-#    (나중에 코드만 바뀔 때, 매번 모든 패키지를 다시 설치하는 비효율을 막기 위함)
+# 3. package.json 파일들만 먼저 복사하여 의존성 설치
 COPY package*.json ./
 RUN npm install --production
 
-# 4. 나머지 모든 앱 코드를 복사합니다.
+# 4. 나머지 모든 앱 코드를 복사
 COPY . .
 
-# 5. 이 컨테이너가 실행될 때 최종적으로 실행할 명령어를 지정합니다.
-CMD [ "node", "back.js" ] # ./back.js 가 실행 파일일 경우
+# 5. ‼️ 여기가 핵심 1: back.js 파일에 실행 권한 부여
+#    셸이 이 파일을 '실행 가능한 파일'로 명확히 인지하게 만듭니다.
+RUN chmod +x ./back.js
+
+# 6. ‼️ 여기가 핵심 2: 컨테이너 실행 명령어
+#    셸을 거치지 않는 Exec 형식으로, node 프로그램을 직접 실행하도록 명시합니다.
+ENTRYPOINT [ "node", "./back.js" ]
