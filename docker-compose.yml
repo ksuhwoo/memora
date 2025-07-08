@@ -24,6 +24,10 @@ services:
     networks:
       - app-network
 
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+
   # ‼️ Node.js 통합 앱 서비스 (PM2가 내부에서 두 개를 실행)
   app:
     build: .
