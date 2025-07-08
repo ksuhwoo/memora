@@ -1,4 +1,4 @@
-# Dockerfile
+# Dockerfile (결전의 최종 버전)
 
 # 1. 알파인 리눅스 기반의 Node.js 18 이미지를 사용합니다.
 FROM node:18-alpine
