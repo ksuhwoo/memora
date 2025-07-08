@@ -10,8 +10,16 @@ services:
       - "80:80"
     volumes:
       - ./nginx:/etc/nginx/conf.d
+
+      # ‼️ 여기가 핵심 2: SSL 인증서 폴더를 공유합니다.
+      # 서버의 /home/ubuntu/live/ 폴더를, 컨테이너의 /etc/letsencrypt/live/ 폴더로 연결합니다.
+      - /home/ubuntu/live:/etc/letsencrypt/live
+
+      # ‼️ 여기가 핵심 3: 사용자 업로드 폴더를 공유합니다.
+      # 서버의 /home/ubuntu/memora/uploads 폴더를, 컨테이너의 /home/ubuntu/memora/uploads 폴더로 연결합니다.
+      - /home/ubuntu/memora/uploads:/home/ubuntu/memora/uploads
     depends_on:
-      - app # 'app' 서비스에 의존
+      - app
     networks:
       - app-network
 
