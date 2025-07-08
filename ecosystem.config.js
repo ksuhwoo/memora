@@ -1,6 +1,24 @@
+// ecosystem.config.js
+
 module.exports = {
-  apps : [{
-    name   : "back", // ‼️ 여기에 원하는 앱 이름을 적으세요. 이것이 PM2의 이름이 됩니다.
-    script : "./back.js" // ‼️ 실제 실행할 파일 경로를 적으세요. (예: ./back.js)
-  }]
-}
+  apps : [
+    {
+      name   : "front",
+      script : "./front.js", // 프론트엔드 실행 파일
+      watch  : false,
+      // env_production: {
+      //    NODE_ENV: "production",
+      //    PORT: 3000
+      // }
+    },
+    {
+      name   : "back",
+      script : "./back.js", // 백엔드 실행 파일
+      watch  : false,
+      // env_production: {
+      //    NODE_ENV: "production",
+      //    PORT: 3001
+      // }
+    }
+  ]
+};
