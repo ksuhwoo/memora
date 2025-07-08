@@ -1,0 +1,39 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # 101호 세입자: Node.js 백엔드 앱
+  backend:
+    build: . # 현재 폴더의 Dockerfile을 사용하여 이미지를 만듭니다.
+    restart: always # 컨테이너가 멈추면 항상 자동으로 재시작합니다.
+    env_file:
+      - .env # .env 파일의 모든 변수를 이 컨테이너에 주입합니다.
+    networks:
+      - app-network # 아래에 정의된 내부 네트워크에 연결합니다.
+    depends_on:
+      - db # 'db' 서비스가 먼저 실행된 후에 실행됩니다.
+
+  # 102호 세입자: MySQL 데이터베이스
+  db:
+    image: mysql:8.0 # Docker Hub에서 공식 MySQL 8.0 이미지를 가져옵니다.
+    restart: always
+    env_file:
+      - .env # .env 파일에서 DB 비밀번호 등을 가져옵니다.
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD} # .env 변수 사용
+      MYSQL_DATABASE: ${DB_NAME}
+    volumes:
+      - db-data:/var/lib/mysql # ‼️ 매우 중요: DB 데이터를 서버의 실제 디스크에 저장하여, 컨테이너가 삭제되어도 데이터가 보존되게 합니다.
+    networks:
+      - app-network
+
+  # 103호 세입자: Nginx 리버스 프록시
+  # (지금은 생략하고, 나중에 필요할 때 추가하는 것이 더 간단합니다.)
+
+# 컨테이너들이 서로 통신할 내부 전용 네트워크
+networks:
+  app-network:
+
+# DB 데이터가 저장될 실제 디스크 공간
+volumes:
+  db-data:

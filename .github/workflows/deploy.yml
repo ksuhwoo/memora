@@ -35,23 +35,28 @@ jobs:
           # 2. git pull로 최신 코드를 가져옵니다.
           git pull origin master
 
+          # 💡 이제 모든 것은 docker compose가 알아서 합니다!
+          # --build: 코드가 바뀌었으니 이미지를 새로 만듭니다.
+          # -d: 백그라운드에서 실행합니다.
+          docker compose up --build -d
+
           # 3. ‼️ 여기가 핵심! nvm을 수동으로 로드합니다.
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+         # export NVM_DIR="$HOME/.nvm"
+         # [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
           # 4. ‼️ 여기가 핵심! .env 파일을 읽어서 환경 변수를 설정합니다.
           #    이제 npm, knex, pm2 모두 DB 정보를 알게 됩니다.
-          set -a
-          source .env
-          set +a
+         # set -a
+         # source .env
+         # set +a
 
           # 5. npm으로 패키지를 설치합니다.
-          npm install --production
+         # npm install --production
 
           # 6. knex로 DB 마이그레이션을 실행합니다.
-          npx knex migrate:latest
+         # npx knex migrate:latest
 
           # 7. ‼️ 여기가 핵심! pm2로 앱을 '재시작 또는 새로 시작'합니다.
           #    'reload' 대신 'startOrRestart'를 사용하여, 앱이 꺼져있으면 새로 시작하고,
           #    켜져 있으면 재시작하도록 만듭니다. 'my-app'은 package.json의 name과 일치시키는 것이 좋습니다.
-          pm2 startOrRestart ecosystem.config.js --env production
+         # pm2 startOrRestart ecosystem.config.js --env production
