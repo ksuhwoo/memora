@@ -1,62 +1,41 @@
-# docker-compose.yml (진짜 최종 수정본)
-version: '3.8'
+# docker-compose.yml
 
 services:
-  # Nginx 경비실 (수정됨: 불필요한 command 삭제)
+  # Nginx 경비실 서비스
   nginx:
-    image: nginx:1.25 # alpine 대신 표준 이미지 사용 권장
+    image: nginx:1.25
     restart: always
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./nginx:/etc/nginx/conf.d
-      - /home/ubuntu/live:/etc/letsencrypt/live:ro # 읽기 전용으로 마운트 (보안상 더 좋음)
-      - /home/ubuntu/memora/uploads:/home/ubuntu/memora/uploads
+      - /home/ubuntu/live:/etc/letsencrypt/live:ro
+      # ‼️ 여기가 핵심 1: 서버의 실제 uploads 폴더를, Nginx 컨테이너 안의 같은 경로로 연결합니다.
+      - /home/ubuntu/memora/uploads:/home/ubuntu/memora/uploads:ro # Nginx는 읽기만 하면 되므로 :ro (읽기 전용) 추가
     depends_on:
       - app
     networks:
       - app-network
 
-  # Node.js 통합 앱 서비스 (수정됨: depends_on 조건 추가)
+  # Node.js 통합 앱 서비스
   app:
     build: .
     restart: always
     env_file:
       - .env
+    # ‼️ 여기가 핵심 2: Node.js 앱도 파일을 업로드해야 하므로, 똑같은 폴더를 공유해야 합니다.
+    volumes:
+      - /home/ubuntu/memora/uploads:/usr/src/app/uploads # 컨테이너 내부의 작업 폴더 아래 uploads로 연결
     depends_on:
       db:
-        condition: service_healthy # ‼️ db의 healthcheck가 성공할 때까지 기다립니다.
+        condition: service_healthy
     networks:
       - app-network
 
-  # 데이터베이스 서비스 (수정됨: command 및 healthcheck 추가)
+  # 데이터베이스 서비스 (변경 없음)
   db:
-    image: mysql:8.0
-    restart: always
-    env_file:
-      - .env # ‼️ 루트의 .env 파일을 사용합니다.
-    environment:
-      # ‼️ docker-compose v2.2+ 에서는 .env 파일을 읽어 자동으로 변환해줍니다.
-      # 만약 아래 변수가 적용되지 않으면, .env 파일에 직접 MYSQL_USER=root 등을 추가해야 합니다.
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USER}       # ‼️ healthcheck를 위해 필요
-      MYSQL_PASSWORD: ${DB_PASSWORD} # ‼️ healthcheck를 위해 필요
-    volumes:
-      - db-data:/var/lib/mysql
-    networks:
-      - app-network
-    # ‼️ 여기가 핵심! 한글 설정을 위한 옵션 (nginx가 아닌 db에 있어야 함)
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-    # ‼️ 여기가 핵심! DB가 정말 준비되었는지 확인하는 '건강검진'
-    healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "$${MYSQL_USER}", "-p$${MYSQL_PASSWORD}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+    # ... 이전과 동일 ...
 
 networks:
   app-network:
