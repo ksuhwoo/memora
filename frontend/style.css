@@ -6,7 +6,7 @@
 
 /* 페이지의 h1 태그에 대한 기본 스타일 */
 h1 {
-    color: black;
+    color: white;
 }
 
 /* 페이지 전체에 적용되는 body 스타일 */
@@ -19,7 +19,7 @@ body {
       이 코드는 헤더 스타일이 아니므로 여기에 남아야 합니다.
     */
     padding-top: 70px;
-    background-color: white;
+    background-color: #474787;
     font-family: sans-serif; /* 사이트 전체 기본 폰트 */
 }
 
@@ -36,8 +36,8 @@ body {
   position: fixed;
   bottom: 20px;
   left: 20px;
-  width: 340px;
-  height: 500px;
+  width: 400px;
+  height: 800px;
   background-color: #18181b; /* 어두운 배경 */
   color: #efeff1; /* 기본 글자색 */
   border-radius: 10px;
@@ -245,4 +245,56 @@ body {
 .chat-message.deleted .username {
   pointer-events: none; /* 삭제된 메시지는 프로필 클릭 안되게 */
   text-decoration: line-through; /* 취소선 */
+}
+
+/* style.css 파일에 추가 */
+
+/* style.css 파일에서 이 부분을 찾으세요 */
+.image-container {
+  display: flex; /* 자식 요소들을 가로로 정렬 */
+  flex-wrap: wrap; /* ★★★ 이 한 줄을 추가해주세요! ★★★ */
+  align-items: flex-start; /* 위쪽을 기준으로 정렬 */
+  gap: 20px; /* 간격을 2px에서 20px 정도로 늘리는 것을 추천합니다. */
+  padding: 40px; /* 컨테이너 전체의 여백 */
+}
+
+.image-wrapper {
+  /* 이미지들이 부모 div의 크기를 벗어나지 않도록 설정 */
+  overflow: hidden; 
+}
+
+.image-wrapper img {
+  /* 이미지가 부모 div에 꽉 차게 표시되도록 함 */
+  width: 80%;
+  height: auto;
+  display: block; /* 이미지 아래의 불필요한 여백 제거 */
+}
+
+/* style.css 파일에서 이 부분을 찾아서 수정하거나, 없다면 추가하세요 */
+/* ★★★ 가장 중요한 부분: 크기 비율 조절 ★★★ */
+.left-image {
+  flex-grow: 2;
+  flex-basis: 60%; /* ★★★ 이 부분을 추가하거나 수정하세요. ★★★ */
+}
+
+.right-image {
+  flex-grow: 1;
+  flex-basis: 30%; /* ★★★ 이 부분을 추가하거나 수정하세요. ★★★ */
+}
+
+/* style.css 파일의 맨 아래에 이 코드를 새로 추가하세요 */
+
+/* ★★★ 새로 추가한 이미지 스타일 (수정됨) ★★★ */
+.full-width-image {
+  flex-basis: 100%; /* 부모 너비의 100%를 차지하여 다음 줄로 넘어가게 함 */
+  
+  /* --- 이 부분을 추가하세요 --- */
+  display: flex;
+  justify-content: center;
+}
+
+/* 새로 추가한 이미지의 최대 너비를 제한하고 싶을 경우 (선택사항) */
+.full-width-image img {
+  max-width: 900px; /* 예시: 최대 너비를 900px로 제한 */
+  width: 100%; /* 부모 너비에 맞춤 */
 }

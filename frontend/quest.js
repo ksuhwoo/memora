@@ -16,10 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 퀘스트 스크립트 정의 ---
     const script = [
-        { speaker: 'NPC', text: 'Here is my plan:' },
-        { speaker: 'NPC', text: 'I plan to build a website with a real-time chat and login system.' },
-        { speaker: 'Player', text: 'That looks good. Continue!' },
-        { speaker: 'NPC', text: 'Would you like to try the [Login] quest?',
+        { speaker: 'NPC', text: 'MEMORA 프로젝트에 어서와 :)' },
+        { speaker: 'NPC', text: '실시간 채팅과 로그인 시스템을 만들었어.' },
+        { speaker: 'Player', text: '우와! 해보고 싶어' },
+        { speaker: 'NPC', text: '직접 체험하고 싶으면 화면을 눌러봐 :)',
           isLastMessage: true // ★★★ 마지막 메시지임을 표시하는 플래그 추가
         }
     ];

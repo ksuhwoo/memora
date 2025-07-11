@@ -6,7 +6,7 @@ table {
     padding-top: 80px;
 }
 .top-bar {
-  background-color: #333;
+  background-color: #2c2c54;
   color: white;
   text-align: center;
   padding: 13px 0;
@@ -37,11 +37,11 @@ input[type="text"], input[type="password"] {
     outline: none;
     padding-left: 10px;
     color: white;
-    background-color: #123458;
+    background-color: #9146ff;
     cursor: pointer;
 }
 .btn:hover {
-  background-color: #0a1c30;
+  background-color: #474787;
 }
 .btn:active {
     width: 263px;

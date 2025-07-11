@@ -1,4 +1,12 @@
-/* quest.css (최종 "대화 로그" 버전) */
+/* quest.css ("대화 로그" 및 폰트 수정 최종 버전) */
+
+/* 1. CSS 파일 최상단에 @font-face 규칙으로 'DungGeunMo' 폰트를 먼저 정의합니다. */
+@font-face {
+    font-family: 'DungGeunMo'; /* 우리가 사용할 폰트의 이름을 정합니다. */
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); /* 폰트 파일의 위치 */
+    font-weight: normal;
+    font-style: normal;
+}
 
 /* 전체 화면 오버레이 */
 .quest-takeover-screen {
@@ -6,7 +14,10 @@
     top: 0; left: 0; width: 100vw; height: 100vh;
     background-color: #2c2c54;
     z-index: 9999;
-    font-family: 'Press Start 2P', cursive;
+    
+    /* 2. 위에서 정의한 폰트 이름을 font-family에서 사용합니다. */
+    font-family: 'DungGeunMo', 'Press Start 2P', cursive;
+
     font-smooth: never;
     -webkit-font-smoothing: none;
     display: flex;
@@ -33,7 +44,7 @@
     box-shadow: 8px 8px 0px #1e1e3a;
     max-width: 80%; /* 말풍선 너비 */
     
-    /* ★★★ 부드럽게 나타나는 효과를 위한 초기 상태 ★★★ */
+    /* 부드럽게 나타나는 효과를 위한 초기 상태 */
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.5s, transform 0.5s;
@@ -43,18 +54,36 @@
     transform: translateY(0);
 }
 
-/* ... 나머지 스타일은 이전과 거의 동일 ... */
-.text-content p { margin: 0; line-height: 1.6; font-size: 16px; }
-.npc-box { background-color: #d1d1f6; color: #1e1e3a; align-self: flex-start; } /* NPC는 왼쪽에 정렬 */
-.player-box { background-color: #474787; color: #d1d1f6; align-self: flex-end; } /* Player는 오른쪽에 정렬 */
+/* 텍스트 및 캐릭터 스타일 */
+.text-content p { 
+    margin: 0; 
+    line-height: 1.6; 
+    font-size: 20px; /* 폰트가 잘 보이도록 크기를 약간 키웠습니다. */
+}
+.npc-box { 
+    background-color: #d1d1f6; 
+    color: #1e1e3a; 
+    align-self: flex-start; /* NPC는 왼쪽에 정렬 */
+}
+.player-box { 
+    background-color: #474787; 
+    color: #d1d1f6; 
+    align-self: flex-end; /* Player는 오른쪽에 정렬 */
+}
 .character-sprite {
-    width: 64px; height: 64px; flex-shrink: 0;
+    width: 64px; 
+    height: 64px; 
+    flex-shrink: 0;
     image-rendering: pixelated;
 }
-.npc-box .character-sprite { margin-right: 20px; }
-.player-box .character-sprite { margin-left: 20px; }
+.npc-box .character-sprite { 
+    margin-right: 20px; 
+}
+.player-box .character-sprite { 
+    margin-left: 20px; 
+}
 
-/* 로그인 버튼 강조 스타일 (이전과 동일) */
+/* 로그인 버튼 강조 스타일 */
 .quest-highlight {
     position: relative;
     outline: 4px dashed #ff00ff;
