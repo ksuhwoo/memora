@@ -1,7 +1,7 @@
-# docker-compose.yml
+# docker-compose.yml (들여쓰기 검증 최종본)
 
 services:
-  # Nginx 경비실 서비스
+  # Nginx 경비실
   nginx:
     image: nginx:1.25
     restart: always
@@ -11,31 +11,47 @@ services:
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - /home/ubuntu/live:/etc/letsencrypt/live:ro
-      # ‼️ 여기가 핵심 1: 서버의 실제 uploads 폴더를, Nginx 컨테이너 안의 같은 경로로 연결합니다.
-      - /home/ubuntu/memora/uploads:/home/ubuntu/memora/uploads:ro # Nginx는 읽기만 하면 되므로 :ro (읽기 전용) 추가
+      - /home/ubuntu/memora/uploads:/home/ubuntu/memora/uploads:ro
     depends_on:
       - app
     networks:
       - app-network
 
-  # Node.js 통합 앱 서비스
+  # Node.js 통합 앱 서비스 (PM2 실행)
   app:
     build: .
     restart: always
     env_file:
       - .env
-    # ‼️ 여기가 핵심 2: Node.js 앱도 파일을 업로드해야 하므로, 똑같은 폴더를 공유해야 합니다.
     volumes:
-      - /home/ubuntu/memora/uploads:/usr/src/app/uploads # 컨테이너 내부의 작업 폴더 아래 uploads로 연결
+      - /home/ubuntu/memora/uploads:/usr/src/app/uploads
     depends_on:
       db:
         condition: service_healthy
     networks:
       - app-network
 
-  # 데이터베이스 서비스 (변경 없음)
+  # 데이터베이스 서비스
   db:
-    # ... 이전과 동일 ...
+    image: mysql:8.0
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "$${MYSQL_USER}", "-p$${MYSQL_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 networks:
   app-network:
