@@ -10,12 +10,22 @@
   
   <link rel="icon" href="memora.ico">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- ▼▼▼ [수정] 퀘스트 기능에 필요한 링크 추가 ▼▼▼ -->
+  <!-- 1. 픽셀 스타일 폰트 로드 (Google Fonts 'Press Start 2P') -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <!-- 2. 퀘스트 UI 전용 CSS 로드 -->
+  <link rel="stylesheet" href="quest.css">
+  <!-- ▲▲▲ [수정] 퀘스트 기능에 필요한 링크 추가 ▲▲▲ -->
+
 </head>
 <body>
 
+  <!-- 기존 body 내용은 그대로 유지됩니다. -->
   <header id="header-placeholder"></header>
 
-  <!-- ▼▼▼ 여기에 추가 ▼▼▼ -->
   <div id="chatContainer" class="chat-container chat-closed">
     <div id="chatHeader" class="chat-header">
       <span>실시간 채팅</span>
@@ -29,7 +39,6 @@
       </form>
     </div>
   </div>
-  <!-- ▲▲▲ 여기까지 추가 ▲▲▲ -->
 
   <div class="logo" style="text-align: center;">
     <img src="memoralogo.png" alt="memora logo" width="500px">
@@ -40,14 +49,6 @@
     <p>HTML for testing</p>
   </div>
   
-  <!-- ▼▼▼ 스크립트 로드 ▼▼▼ -->
-  <!-- 1. Socket.IO 클라이언트 라이브러리 로드 -->
-  <script src="/socket.io/socket.io.js"></script>
-  <!-- 2. 헤더 및 인증 로직 로드 (generateColorFromUsername 함수 포함) -->
-  <script src="/load-header.js"></script>
-  <!-- 3. 채팅 클라이언트 로직 로드 -->
-  <script src="/chat-client.js"></script>
-  <!-- ▼▼▼ 여기에 이 코드를 추가하세요 ▼▼▼ -->
   <div id="userProfileModal" class="user-profile-modal">
     <div class="modal-content">
       <div id="modalAvatar" class="modal-avatar"></div>
@@ -60,10 +61,17 @@
       <li id="deleteChatMessage">채팅 삭제</li>
     </ul>
   </div>
-  <!-- ▲▲▲ 여기까지 추가 ▲▲▲ -->
-  
-  <!-- ▼▼▼ 스크립트 로드 ▼▼▼ -->
+
+  <!-- ▼▼▼ [수정] 스크립트 로드 순서 정리 및 퀘스트 스크립트 추가 ▼▼▼ -->
+  <!-- 1. Socket.IO 클라이언트 라이브러리 로드 -->
   <script src="/socket.io/socket.io.js"></script>
-  <!-- ... (나머지 스크립트) -->
+  <!-- 2. 헤더 및 인증 로직 로드 -->
+  <script src="/load-header.js"></script>
+  <!-- 3. 채팅 클라이언트 로직 로드 -->
+  <script src="/chat-client.js"></script>
+  <!-- 4. 퀘스트 시스템 로직 로드 ('defer'를 사용하여 페이지 로드 후 실행) -->
+  <script defer src="quest.js"></script>
+  <!-- ▲▲▲ [수정] 스크립트 로드 순서 정리 및 퀘스트 스크립트 추가 ▲▲▲ -->
+  
 </body>
 </html>
