@@ -47,6 +47,9 @@ services:
       - ./my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - app-network
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "$${MYSQL_USER}", "-p$${MYSQL_PASSWORD}"]
       interval: 30s
